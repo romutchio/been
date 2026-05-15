@@ -12,6 +12,12 @@ async function requireUser() {
   return { supabase, user: { id: userId } };
 }
 
+function revalidateVisits() {
+  revalidatePath("/map");
+  revalidatePath("/wishlist");
+  revalidatePath("/leaderboard");
+}
+
 async function syncVisitsFromCountries(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
@@ -102,8 +108,7 @@ export async function toggleVisit(countryCode: string, visitedAt?: string) {
     });
   }
 
-  revalidatePath("/map");
-  revalidatePath("/wishlist");
+  revalidateVisits();
 }
 
 export async function addVisit(countryCode: string) {
@@ -124,8 +129,7 @@ export async function addVisit(countryCode: string) {
     });
   }
 
-  revalidatePath("/map");
-  revalidatePath("/wishlist");
+  revalidateVisits();
 }
 
 export async function toggleWishlist(countryCode: string) {
@@ -203,7 +207,7 @@ export async function createTrip(formData: FormData) {
   );
 
   revalidatePath("/trips");
-  revalidatePath("/map");
+  revalidateVisits();
 }
 
 export async function updateTrip(tripId: string, formData: FormData) {
@@ -234,7 +238,7 @@ export async function updateTrip(tripId: string, formData: FormData) {
   );
 
   revalidatePath("/trips");
-  revalidatePath("/map");
+  revalidateVisits();
 }
 
 export async function deleteTrip(tripId: string) {
@@ -284,6 +288,29 @@ export async function respondFriendRequest(
   } else {
     await supabase.from("friendships").delete().eq("id", friendshipId);
   }
+
+  revalidatePath("/friends");
+  revalidatePath("/map");
+}
+
+export async function removeFriend(friendshipId: string) {
+  const { supabase, user } = await requireUser();
+
+  const { data: friendship } = await supabase
+    .from("friendships")
+    .select("requester_id, addressee_id")
+    .eq("id", friendshipId)
+    .maybeSingle();
+
+  if (!friendship) throw new Error("Дружба не найдена");
+  if (
+    friendship.requester_id !== user.id &&
+    friendship.addressee_id !== user.id
+  ) {
+    throw new Error("Нет доступа");
+  }
+
+  await supabase.from("friendships").delete().eq("id", friendshipId);
 
   revalidatePath("/friends");
   revalidatePath("/map");

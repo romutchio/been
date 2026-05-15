@@ -50,3 +50,50 @@ export async function getFriendProfile(friendId: string) {
     .single();
   return data as Profile | null;
 }
+
+export type LeaderboardEntry = {
+  rank: number;
+  profile: Profile;
+  countries: number;
+};
+
+export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+  const supabase = createClient();
+
+  const { data: visits } = await supabase
+    .from("visits")
+    .select("user_id, country_code");
+
+  const counts = new Map<string, Set<string>>();
+  for (const v of visits ?? []) {
+    let set = counts.get(v.user_id);
+    if (!set) {
+      set = new Set();
+      counts.set(v.user_id, set);
+    }
+    set.add(v.country_code);
+  }
+
+  const sorted = [...counts.entries()].sort((a, b) => b[1].size - a[1].size);
+  if (sorted.length === 0) return [];
+
+  const userIds = sorted.map(([id]) => id);
+  const { data: profiles } = await supabase
+    .from("profiles")
+    .select("*")
+    .in("id", userIds);
+
+  const profileMap = new Map((profiles ?? []).map((p) => [p.id, p as Profile]));
+
+  return sorted
+    .map(([userId, codes], index) => {
+      const profile = profileMap.get(userId);
+      if (!profile) return null;
+      return {
+        rank: index + 1,
+        profile,
+        countries: codes.size,
+      };
+    })
+    .filter((e): e is LeaderboardEntry => e !== null);
+}

@@ -2,8 +2,12 @@
 
 import Link from "next/link";
 import { useRef, useTransition, useState } from "react";
-import { respondFriendRequest, sendFriendRequest } from "@/app/actions";
-import { UserPlus, Check, X, Map } from "lucide-react";
+import {
+  removeFriend,
+  respondFriendRequest,
+  sendFriendRequest,
+} from "@/app/actions";
+import { UserPlus, Check, X, Map, UserMinus } from "lucide-react";
 import type { Friendship, Profile } from "@/types/database";
 
 type FriendWithProfile = Friendship & {
@@ -31,6 +35,17 @@ export function FriendsPanel({ friendships, currentUserId }: Props) {
 
   function friendProfile(f: FriendWithProfile): Profile {
     return f.requester_id === currentUserId ? f.addressee : f.requester;
+  }
+
+  function handleRemove(friendshipId: string) {
+    setError(null);
+    startTransition(async () => {
+      try {
+        await removeFriend(friendshipId);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Ошибка");
+      }
+    });
   }
 
   return (
@@ -87,17 +102,15 @@ export function FriendsPanel({ friendships, currentUserId }: Props) {
                       )
                     }
                     className="rounded-lg bg-emerald-600/20 p-2 text-emerald-400 hover:bg-emerald-600/30"
+                    aria-label="Принять"
                   >
                     <Check className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
-                    onClick={() =>
-                      startTransition(() =>
-                        respondFriendRequest(f.id, false),
-                      )
-                    }
+                    onClick={() => handleRemove(f.id)}
                     className="rounded-lg bg-red-500/10 p-2 text-red-400 hover:bg-red-500/20"
+                    aria-label="Отклонить"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -117,9 +130,18 @@ export function FriendsPanel({ friendships, currentUserId }: Props) {
             {pendingOutgoing.map((f) => (
               <li
                 key={f.id}
-                className="rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-zinc-400"
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3"
               >
-                @{f.addressee.username} — ожидание
+                <span className="text-zinc-400">@{f.addressee.username}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemove(f.id)}
+                  disabled={pending}
+                  className="flex items-center gap-1 rounded-lg bg-white/10 px-3 py-1.5 text-sm text-zinc-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                >
+                  <X className="h-3.5 w-3.5" />
+                  Отменить
+                </button>
               </li>
             ))}
           </ul>
@@ -147,13 +169,24 @@ export function FriendsPanel({ friendships, currentUserId }: Props) {
                     </p>
                     <p className="text-sm text-zinc-500">@{p.username}</p>
                   </div>
-                  <Link
-                    href={`/map?friend=${p.id}`}
-                    className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/15"
-                  >
-                    <Map className="h-4 w-4" />
-                    Карта
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/map?friend=${p.id}`}
+                      className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/15"
+                    >
+                      <Map className="h-4 w-4" />
+                      Карта
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => handleRemove(f.id)}
+                      disabled={pending}
+                      className="rounded-lg p-2 text-zinc-500 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                      aria-label="Удалить из друзей"
+                    >
+                      <UserMinus className="h-4 w-4" />
+                    </button>
+                  </div>
                 </li>
               );
             })}

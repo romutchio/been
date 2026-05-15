@@ -30,7 +30,21 @@ Supabase → **Project Settings** → **API**:
 
 Миграции `005`/`006` (RPC в Postgres) для этого варианта не обязательны.
 
-## Запуск
+## Деплой (Render)
+
+В **Environment** сервиса задай:
+
+| Переменная | Значение |
+|------------|----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL проекта Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | service_role (Secret) |
+| `SESSION_SECRET` | случайная строка 32+ символов |
+
+Локально те же имена в `.env.local`. После смены переменных — redeploy.
+
+Build: `npm install && npm run build`, Start: `npm start`.
+
+## Запуск локально
 
 ```bash
 npm install

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Globe, Heart, LogOut, Map, Users } from "lucide-react";
+import { Globe, Heart, LogOut, Map, Trophy, Users } from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
 
 const nav = [
@@ -10,6 +10,7 @@ const nav = [
   { href: "/trips", label: "Поездки", icon: Globe },
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/friends", label: "Друзья", icon: Users },
+  { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
 ];
 
 type Props = {

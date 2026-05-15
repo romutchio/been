@@ -10,8 +10,7 @@ import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { countryByNumericId, getCountryName } from "@/lib/countries";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 
-const MAP_URL =
-  "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
+const MAP_URL = "/world-atlas/countries-110m.json";
 
 type Props = {
   visited: Set<string>;

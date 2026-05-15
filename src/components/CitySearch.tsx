@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MapPin } from "lucide-react";
+import { searchCities } from "@/lib/city-search";
 import { getCountryName } from "@/lib/countries";
-
-type Place = { name: string; country_code: string | null; region: string | null };
 
 type Props = {
   countryCode: string;
@@ -15,10 +14,22 @@ type Props = {
 export function CitySearch({ countryCode, onSelect, exclude }: Props) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const [results, setResults] = useState<Place[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [active, setActive] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+
+  const results = useMemo(
+    () =>
+      searchCities(query, countryCode).filter(
+        (p) => !exclude?.has(p.name.toLowerCase()),
+      ),
+    [query, countryCode, exclude],
+  );
+
+  const trimmed = query.trim();
+  const canAddCustom =
+    trimmed.length >= 2 &&
+    !results.some((r) => r.name.toLowerCase() === trimmed.toLowerCase()) &&
+    !exclude?.has(trimmed.toLowerCase());
 
   useEffect(() => {
     function onDoc(e: MouseEvent) {
@@ -28,43 +39,38 @@ export function CitySearch({ countryCode, onSelect, exclude }: Props) {
     return () => document.removeEventListener("mousedown", onDoc);
   }, []);
 
-  useEffect(() => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (query.trim().length < 2) {
-      setResults([]);
-      return;
-    }
-
-    timerRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          q: query.trim(),
-          country: countryCode,
-        });
-        const res = await fetch(`/api/places?${params}`);
-        const data = (await res.json()) as Place[];
-        setResults(
-          data.filter((p) => !exclude?.has(p.name.toLowerCase())),
-        );
-        setOpen(true);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 300);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [query, countryCode, exclude]);
-
   function pick(name: string) {
     onSelect(name);
     setQuery("");
-    setResults([]);
     setOpen(false);
+    setActive(0);
+  }
+
+  function onKeyDown(e: React.KeyboardEvent) {
+    const total = results.length + (canAddCustom ? 1 : 0);
+    if (!open || total === 0) {
+      if (e.key === "Enter" && canAddCustom) {
+        e.preventDefault();
+        pick(trimmed);
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActive((i) => Math.min(i + 1, total - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActive((i) => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (active < results.length) {
+        pick(results[active].name);
+      } else if (canAddCustom) {
+        pick(trimmed);
+      }
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
   }
 
   return (
@@ -74,35 +80,51 @@ export function CitySearch({ countryCode, onSelect, exclude }: Props) {
         <input
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onFocus={() => results.length > 0 && setOpen(true)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+            setActive(0);
+          }}
+          onFocus={() => trimmed && setOpen(true)}
+          onKeyDown={onKeyDown}
           placeholder={`Город в ${getCountryName(countryCode)}…`}
           className="w-full rounded-lg border border-white/10 bg-black/30 py-2 pl-9 pr-3 text-sm outline-none focus:border-emerald-500/50"
           autoComplete="off"
         />
       </div>
-      {loading && query.length >= 2 && (
-        <p className="absolute z-30 mt-1 text-xs text-zinc-500">Поиск…</p>
-      )}
-      {open && !loading && results.length > 0 && (
+      {open && trimmed.length >= 1 && (results.length > 0 || canAddCustom) && (
         <ul className="absolute z-30 mt-1 max-h-48 w-full overflow-auto rounded-lg border border-white/10 bg-zinc-900 py-1 shadow-xl">
-          {results.map((p) => (
-            <li key={`${p.name}-${p.region}`}>
+          {results.map((p, i) => (
+            <li key={p.name}>
               <button
                 type="button"
-                className="w-full px-3 py-2 text-left text-sm hover:bg-white/10"
+                className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 ${
+                  i === active ? "bg-white/10" : ""
+                }`}
+                onMouseEnter={() => setActive(i)}
                 onClick={() => pick(p.name)}
               >
                 <span className="font-medium">{p.name}</span>
-                {p.region && (
-                  <span className="ml-2 text-xs text-zinc-500">{p.region}</span>
-                )}
               </button>
             </li>
           ))}
+          {canAddCustom && (
+            <li>
+              <button
+                type="button"
+                className={`w-full px-3 py-2 text-left text-sm text-emerald-400 hover:bg-white/10 ${
+                  active === results.length ? "bg-white/10" : ""
+                }`}
+                onMouseEnter={() => setActive(results.length)}
+                onClick={() => pick(trimmed)}
+              >
+                Добавить «{trimmed}»
+              </button>
+            </li>
+          )}
         </ul>
       )}
-      {open && !loading && query.length >= 2 && results.length === 0 && (
+      {open && trimmed.length >= 2 && results.length === 0 && !canAddCustom && (
         <p className="absolute z-30 mt-1 w-full rounded-lg border border-white/10 bg-zinc-900 px-3 py-2 text-sm text-zinc-500">
           Город не найден
         </p>
