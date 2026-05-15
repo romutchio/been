@@ -2,58 +2,38 @@
 
 Веб-приложение для отметки посещённых стран на схематичной choropleth-карте мира.
 
-## Возможности
-
-- Интерактивная карта мира (посещено / wishlist)
-- Счётчик и процент посещённых стран
-- Таймлайн поездок с городами
-- Список «хочу посетить»
-- Друзья и сравнение карт
-
-## Стек
-
-- Next.js 16, React 19, Tailwind CSS 4
-- Supabase (PostgreSQL + RLS) — **без Supabase Auth и без email**
-- Собственный вход: логин + пароль, JWT-сессия
-- d3-geo + TopoJSON (world-atlas)
-
-## Настройка Supabase
-
-1. Создай проект на [supabase.com](https://supabase.com)
-2. В **SQL Editor** выполни миграции по порядку:
-   - `001_initial.sql`
-   - `002_trip_cities.sql`
-   - `003_username_auth.sql`
-   - `004_custom_auth.sql`
-3. **Authentication** в Dashboard можно не трогать — приложение не использует Supabase Auth
-4. Скопируй в `.env.local`:
-
-```bash
-cp .env.local.example .env.local
-```
+## Минимальный `.env.local`
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...        # или PUBLISHABLE_KEY
 
-SUPABASE_SERVICE_ROLE_KEY=eyJ...   # API → service_role (secret)
-SUPABASE_JWT_SECRET=your-jwt-secret # API → JWT Secret
+SUPABASE_JWT_SECRET=...                     # JWT Secret на той же странице API
 ```
 
-5. `npm install && npm run dev` → http://localhost:3000
+**Service role не нужен** — регистрация и вход идут через SQL-функции (anon key).
+
+### Откуда взять `SUPABASE_JWT_SECRET`
+
+Supabase → **Project Settings** → **API** → прокрути до **JWT Settings** → скопируй **JWT Secret** (Legacy).
+
+Это одна строка из дашборда, не генерируешь сам. Нужна, чтобы сессия работала с RLS (`auth.uid()`).
+
+## Миграции (SQL Editor, по порядку)
+
+1. `001_initial.sql`
+2. `002_trip_cities.sql`
+3. `003_username_auth.sql`
+4. `004_custom_auth.sql`
+5. `005_auth_rpc.sql`
+
+## Запуск
+
+```bash
+npm install
+npm run dev
+```
 
 ## Авторизация
 
-- Только **логин** и **пароль** — почты нет ни для пользователя, ни внутри
-- Пароль хранится как bcrypt-хеш в `account_credentials`
-- Сессия — JWT в cookie (`been_session`), для RLS работает `auth.uid()`
-
-## Деплой
-
-GitHub Pages **не подходит** (нужен сервер и API). Используй [Vercel](https://vercel.com): подключи репозиторий, добавь те же env-переменные.
-
-## Структура
-
-- `src/app/(app)/` — карта, поездки, wishlist, друзья
-- `src/lib/auth/` — пароли и сессии
-- `supabase/migrations/` — схема БД
+Только **логин + пароль**. Почты и Supabase Auth нет.

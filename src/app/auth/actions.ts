@@ -1,8 +1,6 @@
 "use server";
 
-import { randomUUID } from "crypto";
-import { createAdminClient } from "@/lib/supabase/admin";
-import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { createClient } from "@/lib/supabase/server";
 import {
   createSessionToken,
   clearSessionCookie,
@@ -20,20 +18,12 @@ export type AuthState = {
   error?: string;
 } | null;
 
-async function isUsernameAvailable(username: string): Promise<boolean> {
-  const admin = createAdminClient();
-  if (!admin) return false;
-
-  const { data } = await admin.rpc("is_username_available", { name: username });
-  if (data === false) return false;
-  if (data === true) return true;
-
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("username", username)
-    .maybeSingle();
-  return !profile;
+function mapRpcError(message: string): string {
+  const m = message.toLowerCase();
+  if (m.includes("username_taken")) return "Этот логин уже занят";
+  if (m.includes("invalid_username")) return "Логин: 3–24 символа, латиница, цифры и _";
+  if (m.includes("weak_password")) return "Пароль минимум 6 символов";
+  return translateAuthError(message);
 }
 
 export async function signUpAction(
@@ -52,39 +42,21 @@ export async function signUpAction(
     return { error: "Пароль минимум 6 символов" };
   }
 
-  const admin = createAdminClient();
-  if (!admin) {
-    return {
-      error:
-        "Добавь SUPABASE_SERVICE_ROLE_KEY в .env.local (Project Settings → API → service_role)",
-    };
-  }
-
   try {
-    if (!(await isUsernameAvailable(username))) {
-      return { error: "Этот логин уже занят" };
-    }
+    const supabase = await createClient();
 
-    const userId = randomUUID();
-    const passwordHash = await hashPassword(password);
-
-    const { error: profileError } = await admin.from("profiles").insert({
-      id: userId,
-      username,
-      display_name: displayName,
+    const { data: userId, error } = await supabase.rpc("register_user", {
+      p_username: username,
+      p_password: password,
+      p_display_name: displayName,
     });
 
-    if (profileError) {
-      return { error: translateAuthError(profileError.message) };
+    if (error) {
+      return { error: mapRpcError(error.message) };
     }
 
-    const { error: credError } = await admin
-      .from("account_credentials")
-      .insert({ user_id: userId, password_hash: passwordHash });
-
-    if (credError) {
-      await admin.from("profiles").delete().eq("id", userId);
-      return { error: translateAuthError(credError.message) };
+    if (!userId || typeof userId !== "string") {
+      return { error: "Ошибка регистрации" };
     }
 
     const token = await createSessionToken(userId);
@@ -110,36 +82,23 @@ export async function signInAction(
 
   if (!password) return { error: "Введи пароль" };
 
-  const admin = createAdminClient();
-  if (!admin) {
-    return {
-      error:
-        "Добавь SUPABASE_SERVICE_ROLE_KEY в .env.local (Project Settings → API → service_role)",
-    };
-  }
-
   try {
-    const { data: profile } = await admin
-      .from("profiles")
-      .select("id")
-      .eq("username", username)
-      .maybeSingle();
+    const supabase = await createClient();
 
-    if (!profile) {
+    const { data: userId, error } = await supabase.rpc("verify_user_password", {
+      p_username: username,
+      p_password: password,
+    });
+
+    if (error) {
+      return { error: mapRpcError(error.message) };
+    }
+
+    if (!userId) {
       return { error: "Неверный логин или пароль" };
     }
 
-    const { data: cred } = await admin
-      .from("account_credentials")
-      .select("password_hash")
-      .eq("user_id", profile.id)
-      .maybeSingle();
-
-    if (!cred || !(await verifyPassword(password, cred.password_hash))) {
-      return { error: "Неверный логин или пароль" };
-    }
-
-    const token = await createSessionToken(profile.id);
+    const token = await createSessionToken(userId as string);
     await setSessionCookie(token);
     redirect("/map");
   } catch (err) {
