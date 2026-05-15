@@ -31,7 +31,7 @@ export default async function MapPage({ searchParams }: Props) {
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createClient();
     const { data: friendship } = await supabase
       .from("friendships")
       .select("id")

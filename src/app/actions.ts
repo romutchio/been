@@ -8,7 +8,7 @@ import type { TripPayload } from "@/types/database";
 async function requireUser() {
   const userId = await getSessionUserId();
   if (!userId) throw new Error("Not authenticated");
-  const supabase = await createClient();
+  const supabase = createClient();
   return { supabase, user: { id: userId } };
 }
 

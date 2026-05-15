@@ -6,7 +6,7 @@ export async function getCurrentProfile() {
   const userId = await getSessionUserId();
   if (!userId) return null;
 
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
@@ -17,7 +17,7 @@ export async function getCurrentProfile() {
 }
 
 export async function getUserTravelData(userId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const [visitsRes, wishlistRes] = await Promise.all([
     supabase.from("visits").select("country_code").eq("user_id", userId),
@@ -31,7 +31,7 @@ export async function getUserTravelData(userId: string) {
 }
 
 export async function getTrips(userId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data } = await supabase
     .from("trips")
     .select("*, trip_countries(country_code), trip_cities(id, country_code, city_name)")
@@ -42,7 +42,7 @@ export async function getTrips(userId: string) {
 }
 
 export async function getFriendProfile(friendId: string) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data } = await supabase
     .from("profiles")
     .select("*")

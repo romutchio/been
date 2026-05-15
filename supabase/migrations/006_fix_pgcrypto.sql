@@ -1,4 +1,5 @@
--- Регистрация/вход без service_role: только anon key + RPC
+-- Fix: gen_salt/crypt live in extensions schema on Supabase
+-- Run this if you already applied 005_auth_rpc.sql
 
 create extension if not exists pgcrypto with schema extensions;
 
@@ -71,9 +72,6 @@ begin
   return null;
 end;
 $$;
-
-revoke all on function public.register_user(text, text, text) from public;
-revoke all on function public.verify_user_password(text, text) from public;
 
 grant execute on function public.register_user(text, text, text) to anon, authenticated;
 grant execute on function public.verify_user_password(text, text) to anon, authenticated;

@@ -1,11 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import {
   createSessionToken,
   clearSessionCookie,
   setSessionCookie,
 } from "@/lib/auth/session";
+import { registerUser, verifyUserLogin } from "@/lib/auth/users";
 import {
   normalizeUsername,
   translateAuthError,
@@ -18,12 +18,11 @@ export type AuthState = {
   error?: string;
 } | null;
 
-function mapRpcError(message: string): string {
-  const m = message.toLowerCase();
-  if (m.includes("username_taken")) return "Этот логин уже занят";
-  if (m.includes("invalid_username")) return "Логин: 3–24 символа, латиница, цифры и _";
-  if (m.includes("weak_password")) return "Пароль минимум 6 символов";
-  return translateAuthError(message);
+function mapAuthError(code: string): string {
+  if (code === "username_taken") return "Этот логин уже занят";
+  if (code === "invalid_username") return "Логин: 3–24 символа, латиница, цифры и _";
+  if (code === "weak_password") return "Пароль минимум 6 символов";
+  return translateAuthError(code);
 }
 
 export async function signUpAction(
@@ -43,23 +42,13 @@ export async function signUpAction(
   }
 
   try {
-    const supabase = await createClient();
+    const result = await registerUser(username, password, displayName);
 
-    const { data: userId, error } = await supabase.rpc("register_user", {
-      p_username: username,
-      p_password: password,
-      p_display_name: displayName,
-    });
-
-    if (error) {
-      return { error: mapRpcError(error.message) };
+    if ("error" in result) {
+      return { error: mapAuthError(result.error) };
     }
 
-    if (!userId || typeof userId !== "string") {
-      return { error: "Ошибка регистрации" };
-    }
-
-    const token = await createSessionToken(userId);
+    const token = await createSessionToken(result.userId);
     await setSessionCookie(token);
     redirect("/map");
   } catch (err) {
@@ -83,22 +72,13 @@ export async function signInAction(
   if (!password) return { error: "Введи пароль" };
 
   try {
-    const supabase = await createClient();
-
-    const { data: userId, error } = await supabase.rpc("verify_user_password", {
-      p_username: username,
-      p_password: password,
-    });
-
-    if (error) {
-      return { error: mapRpcError(error.message) };
-    }
+    const userId = await verifyUserLogin(username, password);
 
     if (!userId) {
       return { error: "Неверный логин или пароль" };
     }
 
-    const token = await createSessionToken(userId as string);
+    const token = await createSessionToken(userId);
     await setSessionCookie(token);
     redirect("/map");
   } catch (err) {

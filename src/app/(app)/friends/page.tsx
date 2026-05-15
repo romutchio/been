@@ -6,7 +6,7 @@ export default async function FriendsPage() {
   const profile = await getCurrentProfile();
   if (!profile) return null;
 
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: friendships } = await supabase
     .from("friendships")
     .select("*")

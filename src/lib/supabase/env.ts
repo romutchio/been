@@ -20,14 +20,3 @@ export function getSupabaseUrl(): string {
   );
 }
 
-/** Supports legacy anon key and new publishable key names. */
-export function getSupabaseAnonKey(): string {
-  const key =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-  return assertEnv(
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY or NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-    key,
-  );
-}

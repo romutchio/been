@@ -2,22 +2,24 @@
 
 Веб-приложение для отметки посещённых стран на схематичной choropleth-карте мира.
 
-## Минимальный `.env.local`
+## `.env.local`
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...        # или PUBLISHABLE_KEY
-
-SUPABASE_JWT_SECRET=...                     # JWT Secret на той же странице API
+SUPABASE_SERVICE_ROLE_KEY=eyJ...   # service_role, только сервер
+SESSION_SECRET=...                 # случайная строка 32+ символов
 ```
 
-**Service role не нужен** — регистрация и вход идут через SQL-функции (anon key).
+`service_role` и `SESSION_SECRET` не коммить. Anon key и JWT Secret не нужны.
 
-### Откуда взять `SUPABASE_JWT_SECRET`
+### Где взять ключи
 
-Supabase → **Project Settings** → **API** → прокрути до **JWT Settings** → скопируй **JWT Secret** (Legacy).
+Supabase → **Project Settings** → **API**:
 
-Это одна строка из дашборда, не генерируешь сам. Нужна, чтобы сессия работала с RLS (`auth.uid()`).
+- **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
+- **service_role** → `SUPABASE_SERVICE_ROLE_KEY`
+
+`SESSION_SECRET` — сгенерируй сам (`openssl rand -base64 32`).
 
 ## Миграции (SQL Editor, по порядку)
 
@@ -25,7 +27,8 @@ Supabase → **Project Settings** → **API** → прокрути до **JWT Se
 2. `002_trip_cities.sql`
 3. `003_username_auth.sql`
 4. `004_custom_auth.sql`
-5. `005_auth_rpc.sql`
+
+Миграции `005`/`006` (RPC в Postgres) для этого варианта не обязательны.
 
 ## Запуск
 
@@ -36,4 +39,10 @@ npm run dev
 
 ## Авторизация
 
-Только **логин + пароль**. Почты и Supabase Auth нет.
+Только **логин + пароль**:
+
+- пароль хэшируется на сервере (bcrypt);
+- сессия в httpOnly cookie (`been_session`);
+- запросы к БД идут с **service role** только из server actions — доступ по `userId` из сессии.
+
+Почты и Supabase Auth нет.
