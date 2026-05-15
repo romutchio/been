@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Globe, Heart, LogOut, Map, Users } from "lucide-react";
-import { signOut } from "@/app/actions";
+import { signOutAction } from "@/app/auth/actions";
 
 const nav = [
   { href: "/map", label: "Карта", icon: Map },
@@ -34,7 +34,7 @@ export function AppShell({ username, children }: Props) {
             <span className="hidden text-sm text-zinc-500 sm:inline">
               @{username}
             </span>
-            <form action={signOut}>
+            <form action={signOutAction}>
               <button
                 type="submit"
                 className="rounded-lg p-2 text-zinc-400 hover:bg-white/10 hover:text-white"

@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getSessionUserId } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
 import { Globe, Map, Users, Heart } from "lucide-react";
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) redirect("/map");
+  const userId = await getSessionUserId();
+  if (userId) redirect("/map");
 
   return (
     <div className="min-h-full bg-[#07090d] text-zinc-100">

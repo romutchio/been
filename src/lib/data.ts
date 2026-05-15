@@ -1,17 +1,16 @@
+import { getSessionUserId } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Trip } from "@/types/database";
 
 export async function getCurrentProfile() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const userId = await getSessionUserId();
+  if (!userId) return null;
 
+  const supabase = await createClient();
   const { data: profile } = await supabase
     .from("profiles")
     .select("*")
-    .eq("id", user.id)
+    .eq("id", userId)
     .single();
 
   return profile as Profile | null;
@@ -40,16 +39,6 @@ export async function getTrips(userId: string) {
     .order("created_at", { ascending: false });
 
   return (data ?? []) as Trip[];
-}
-
-export async function getFriendships(userId: string) {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("friendships")
-    .select("*")
-    .or(`requester_id.eq.${userId},addressee_id.eq.${userId}`);
-
-  return data ?? [];
 }
 
 export async function getFriendProfile(friendId: string) {

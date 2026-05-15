@@ -1,30 +1,9 @@
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth/session";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
-    cookies: {
-      getAll() {
-        return request.cookies.getAll();
-      },
-      setAll(cookiesToSet) {
-        cookiesToSet.forEach(({ name, value }) =>
-          request.cookies.set(name, value),
-        );
-        supabaseResponse = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          supabaseResponse.cookies.set(name, value, options),
-        );
-      },
-    },
-  });
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const token = request.cookies.get(SESSION_COOKIE)?.value;
+  const userId = token ? await verifySessionToken(token) : null;
 
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
@@ -35,17 +14,17 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/wishlist") ||
     request.nextUrl.pathname.startsWith("/friends");
 
-  if (!user && isProtected) {
+  if (!userId && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthPage) {
+  if (userId && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = "/map";
     return NextResponse.redirect(url);
   }
 
-  return supabaseResponse;
+  return NextResponse.next({ request });
 }

@@ -1,16 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getSessionUserId } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import type { TripPayload } from "@/types/database";
 
 async function requireUser() {
+  const userId = await getSessionUserId();
+  if (!userId) throw new Error("Not authenticated");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Not authenticated");
-  return { supabase, user };
+  return { supabase, user: { id: userId } };
 }
 
 async function syncVisitsFromCountries(
@@ -288,10 +287,4 @@ export async function respondFriendRequest(
 
   revalidatePath("/friends");
   revalidatePath("/map");
-}
-
-export async function signOut() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  revalidatePath("/", "layout");
 }

@@ -1,10 +1,16 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { randomUUID } from "crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import {
+  createSessionToken,
+  clearSessionCookie,
+  setSessionCookie,
+} from "@/lib/auth/session";
 import {
   normalizeUsername,
   translateAuthError,
-  usernameToAuthEmail,
   validateUsername,
 } from "@/lib/auth-credentials";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
@@ -12,38 +18,22 @@ import { redirect } from "next/navigation";
 
 export type AuthState = {
   error?: string;
-  success?: string;
 } | null;
 
-function authErrorMessage(err: unknown): string {
-  if (err instanceof Error) {
-    if (err.message.includes("ENOTFOUND") || err.message.includes("fetch failed")) {
-      return (
-        "Не удалось подключиться к Supabase. Проверь .env.local и перезапусти dev-сервер."
-      );
-    }
-    return translateAuthError(err.message);
-  }
-  return "Неизвестная ошибка";
-}
+async function isUsernameAvailable(username: string): Promise<boolean> {
+  const admin = createAdminClient();
+  if (!admin) return false;
 
-async function isUsernameAvailable(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  username: string,
-): Promise<boolean> {
-  const { data, error } = await supabase.rpc("is_username_available", {
-    name: username,
-  });
-  if (error) {
-    // RPC missing — fallback: check profiles (works when logged in only)
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("username", username)
-      .maybeSingle();
-    return !profile;
-  }
-  return data === true;
+  const { data } = await admin.rpc("is_username_available", { name: username });
+  if (data === false) return false;
+  if (data === true) return true;
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .maybeSingle();
+  return !profile;
 }
 
 export async function signUpAction(
@@ -62,37 +52,49 @@ export async function signUpAction(
     return { error: "Пароль минимум 6 символов" };
   }
 
-  try {
-    const supabase = await createClient();
+  const admin = createAdminClient();
+  if (!admin) {
+    return {
+      error:
+        "Добавь SUPABASE_SERVICE_ROLE_KEY в .env.local (Project Settings → API → service_role)",
+    };
+  }
 
-    const available = await isUsernameAvailable(supabase, username);
-    if (!available) {
+  try {
+    if (!(await isUsernameAvailable(username))) {
       return { error: "Этот логин уже занят" };
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email: usernameToAuthEmail(username),
-      password,
-      options: {
-        data: { username, display_name: displayName },
-      },
+    const userId = randomUUID();
+    const passwordHash = await hashPassword(password);
+
+    const { error: profileError } = await admin.from("profiles").insert({
+      id: userId,
+      username,
+      display_name: displayName,
     });
 
-    if (error) {
-      return { error: translateAuthError(error.message) };
+    if (profileError) {
+      return { error: translateAuthError(profileError.message) };
     }
 
-    if (data.user && !data.session) {
-      return {
-        error:
-          "Включено подтверждение email в Supabase — отключи: Authentication → Email → Confirm email",
-      };
+    const { error: credError } = await admin
+      .from("account_credentials")
+      .insert({ user_id: userId, password_hash: passwordHash });
+
+    if (credError) {
+      await admin.from("profiles").delete().eq("id", userId);
+      return { error: translateAuthError(credError.message) };
     }
 
+    const token = await createSessionToken(userId);
+    await setSessionCookie(token);
     redirect("/map");
   } catch (err) {
     if (isRedirectError(err)) throw err;
-    return { error: authErrorMessage(err) };
+    return {
+      error: err instanceof Error ? err.message : "Ошибка регистрации",
+    };
   }
 }
 
@@ -106,24 +108,49 @@ export async function signInAction(
   const usernameError = validateUsername(username);
   if (usernameError) return { error: usernameError };
 
-  if (!password) {
-    return { error: "Введи пароль" };
+  if (!password) return { error: "Введи пароль" };
+
+  const admin = createAdminClient();
+  if (!admin) {
+    return {
+      error:
+        "Добавь SUPABASE_SERVICE_ROLE_KEY в .env.local (Project Settings → API → service_role)",
+    };
   }
 
   try {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: usernameToAuthEmail(username),
-      password,
-    });
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("id")
+      .eq("username", username)
+      .maybeSingle();
 
-    if (error) {
-      return { error: translateAuthError(error.message) };
+    if (!profile) {
+      return { error: "Неверный логин или пароль" };
     }
 
+    const { data: cred } = await admin
+      .from("account_credentials")
+      .select("password_hash")
+      .eq("user_id", profile.id)
+      .maybeSingle();
+
+    if (!cred || !(await verifyPassword(password, cred.password_hash))) {
+      return { error: "Неверный логин или пароль" };
+    }
+
+    const token = await createSessionToken(profile.id);
+    await setSessionCookie(token);
     redirect("/map");
   } catch (err) {
     if (isRedirectError(err)) throw err;
-    return { error: authErrorMessage(err) };
+    return {
+      error: err instanceof Error ? err.message : "Ошибка входа",
+    };
   }
+}
+
+export async function signOutAction() {
+  await clearSessionCookie();
+  redirect("/login");
 }
