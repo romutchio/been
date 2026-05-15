@@ -4,13 +4,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { geoNaturalEarth1, geoPath } from "d3-geo";
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomBehavior } from "d3-zoom";
-import { feature } from "topojson-client";
-import type { Topology, GeometryCollection } from "topojson-specification";
 import type { Feature, FeatureCollection, Geometry } from "geojson";
 import { countryByNumericId, getCountryName } from "@/lib/countries";
+import { loadWorldMapGeo } from "@/lib/world-topology";
 import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-
-const MAP_URL = "/world-atlas/countries-110m.json";
 
 type Props = {
   visited: Set<string>;
@@ -47,12 +44,8 @@ export function WorldMap({
   const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
   useEffect(() => {
-    fetch(MAP_URL)
-      .then((r) => r.json())
-      .then((topology: Topology) => {
-        const countries = topology.objects.countries as GeometryCollection;
-        setGeo(feature(topology, countries) as FeatureCollection);
-      })
+    loadWorldMapGeo()
+      .then(setGeo)
       .finally(() => setLoading(false));
   }, []);
 

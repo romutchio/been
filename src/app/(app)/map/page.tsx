@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MapClient } from "@/components/MapClient";
 import {
-  getCurrentProfile,
+  getProfileWithTravel,
   getFriendProfile,
   getUserTravelData,
 } from "@/lib/data";
@@ -13,10 +13,10 @@ type Props = {
 
 export default async function MapPage({ searchParams }: Props) {
   const { friend: friendId } = await searchParams;
-  const profile = await getCurrentProfile();
-  if (!profile) return null;
-
-  const own = await getUserTravelData(profile.id);
+  const me = await getProfileWithTravel();
+  if (!me) return null;
+  const { profile, visited: visitedList, wishlist: wishlistList } = me;
+  const own = { visited: visitedList, wishlist: wishlistList };
 
   if (friendId) {
     const friend = await getFriendProfile(friendId);

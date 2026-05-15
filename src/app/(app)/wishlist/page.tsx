@@ -1,11 +1,10 @@
 import { WishlistPanel } from "@/components/WishlistPanel";
-import { getCurrentProfile, getUserTravelData } from "@/lib/data";
+import { getProfileWithTravel } from "@/lib/data";
 
 export default async function WishlistPage() {
-  const profile = await getCurrentProfile();
-  if (!profile) return null;
-
-  const { wishlist } = await getUserTravelData(profile.id);
+  const me = await getProfileWithTravel();
+  if (!me) return null;
+  const { wishlist } = me;
 
   return (
     <div className="space-y-6">

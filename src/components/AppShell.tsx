@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { Globe, Heart, LogOut, Map, Trophy, Users } from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
+import { loadWorldMapGeo } from "@/lib/world-topology";
 
 const nav = [
   { href: "/map", label: "Карта", icon: Map },
@@ -11,7 +13,7 @@ const nav = [
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/friends", label: "Друзья", icon: Users },
   { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
-];
+] as const;
 
 type Props = {
   username: string;
@@ -20,12 +22,20 @@ type Props = {
 
 export function AppShell({ username, children }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    for (const { href } of nav) {
+      router.prefetch(href);
+    }
+    void loadWorldMapGeo();
+  }, [router]);
 
   return (
     <div className="flex min-h-full flex-col bg-[#07090d] text-zinc-100">
       <header className="sticky top-0 z-20 border-b border-white/10 bg-[#07090d]/90 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/map" className="flex items-center gap-2 font-semibold">
+          <Link href="/map" className="flex items-center gap-2 font-semibold" prefetch>
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
               <Globe className="h-4 w-4" />
             </span>
@@ -53,6 +63,7 @@ export function AppShell({ username, children }: Props) {
               <Link
                 key={href}
                 href={href}
+                prefetch
                 className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
                   active
                     ? "bg-emerald-500/15 text-emerald-400"
