@@ -21,15 +21,16 @@ export default function LoginPage() {
         </Link>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <h1 className="text-2xl font-bold">Вход</h1>
-          <p className="mt-1 text-sm text-zinc-500">С возвращением</p>
+          <p className="mt-1 text-sm text-zinc-500">Логин и пароль</p>
           <form action={formAction} className="mt-6 space-y-4">
             <label className="block">
-              <span className="mb-1 block text-sm text-zinc-400">Email</span>
+              <span className="mb-1 block text-sm text-zinc-400">Логин</span>
               <input
-                name="email"
-                type="email"
+                name="username"
                 required
-                autoComplete="email"
+                autoComplete="username"
+                pattern="[a-z0-9_]{3,24}"
+                placeholder="romutchio"
                 className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 outline-none focus:border-emerald-500/50"
               />
             </label>

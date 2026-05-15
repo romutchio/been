@@ -19,9 +19,14 @@
 ## Настройка Supabase
 
 1. Создай проект на [supabase.com](https://supabase.com)
-2. В **SQL Editor** выполни миграцию из `supabase/migrations/001_initial.sql`
-3. В **Authentication → Providers** включи Email
-4. Скопируй URL и anon key в `.env.local`:
+2. В **SQL Editor** выполни миграции по порядку:
+   - `supabase/migrations/001_initial.sql`
+   - `supabase/migrations/002_trip_cities.sql`
+   - `supabase/migrations/003_username_auth.sql`
+3. **Authentication → Providers → Email**:
+   - Provider включён
+   - **Confirm email — выключить** (иначе вход не сработает без почты)
+4. Скопируй URL и ключ в `.env.local`:
 
 ```bash
 cp .env.local.example .env.local
