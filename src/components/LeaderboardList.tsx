@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { LeaderboardEntry } from "@/lib/data";
 
 type Props = {
@@ -41,13 +42,20 @@ export function LeaderboardList({ entries, currentUserId }: Props) {
               {entry.rank}
             </span>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium">
-                {entry.profile.display_name ?? entry.profile.username}
-                {isMe && (
-                  <span className="ml-2 text-xs text-emerald-400">ты</span>
-                )}
-              </p>
-              <p className="text-sm text-zinc-500">@{entry.profile.username}</p>
+              <Link
+                href={`/info/${entry.profile.username}`}
+                className="block hover:text-emerald-400"
+              >
+                <p className="truncate font-medium">
+                  {entry.profile.display_name ?? entry.profile.username}
+                  {isMe && (
+                    <span className="ml-2 text-xs text-emerald-400">ты</span>
+                  )}
+                </p>
+                <p className="text-sm text-zinc-500">
+                  @{entry.profile.username}
+                </p>
+              </Link>
             </div>
             <div className="text-right">
               <p className="text-lg font-semibold tabular-nums">

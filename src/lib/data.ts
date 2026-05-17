@@ -67,6 +67,26 @@ export async function getFriendProfile(friendId: string) {
   return data as Profile | null;
 }
 
+export async function getProfileByUsername(
+  username: string,
+): Promise<Profile | null> {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("username", username)
+    .maybeSingle();
+  return data as Profile | null;
+}
+
+export async function getPublicProfile(username: string) {
+  const profile = await getProfileByUsername(username);
+  if (!profile) return null;
+
+  const travel = await getUserTravelData(profile.id);
+  return { profile, ...travel };
+}
+
 export type LeaderboardEntry = {
   rank: number;
   profile: Profile;
