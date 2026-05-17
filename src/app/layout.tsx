@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "been — карта путешествий",
+  title: "mutchio — карта путешествий",
   description: "Отмечай посещённые страны на интерактивной карте мира",
 };
 

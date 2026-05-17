@@ -1,44 +1,49 @@
 import Link from "next/link";
 import { getSessionUserId } from "@/lib/auth/session";
+import { getLeaderboard } from "@/lib/data";
 import { redirect } from "next/navigation";
-import { Globe, Map, Users, Heart } from "lucide-react";
+import { Globe, Map, Users, Heart, Trophy } from "lucide-react";
+import { LeaderboardList } from "@/components/LeaderboardList";
+import { TOTAL_COUNTRIES } from "@/lib/countries";
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
   if (userId) redirect("/map");
 
+  const entries = await getLeaderboard();
+
   return (
     <div className="min-h-full bg-[#07090d] text-zinc-100">
-      <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
+      <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6 sm:px-6">
         <span className="flex items-center gap-2 text-xl font-bold">
           <Globe className="h-6 w-6 text-emerald-400" />
-          been
+          mutchio
         </span>
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <Link
             href="/login"
-            className="rounded-lg px-4 py-2 text-sm text-zinc-300 hover:bg-white/5"
+            className="rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 sm:px-4"
           >
             Войти
           </Link>
           <Link
             href="/signup"
-            className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium hover:bg-emerald-500"
+            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500 sm:px-4"
           >
             Начать
           </Link>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pb-20 pt-12 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+      <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 text-center sm:px-6 sm:pt-12">
+        <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
           Отмечай страны,
           <br />
           <span className="text-emerald-400">которые ты посетил</span>
         </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-zinc-400">
+        <p className="mx-auto mt-6 max-w-xl text-base text-zinc-400 sm:text-lg">
           Схематичная карта мира, таймлайн поездок, wishlist и карты друзей —
-          как been, но своё.
+          всё в одном месте.
         </p>
         <Link
           href="/signup"
@@ -47,10 +52,10 @@ export default async function HomePage() {
           Создать аккаунт
         </Link>
 
-        <div className="mt-20 grid gap-6 text-left sm:grid-cols-3">
+        <div className="mt-16 grid gap-6 text-left sm:mt-20 sm:grid-cols-3">
           <Feature
             icon={Map}
-            title="Choropleth карта"
+            title="Карта мира"
             desc="Кликай по странам — они подсвечиваются на схематичной карте мира"
           />
           <Feature
@@ -64,6 +69,19 @@ export default async function HomePage() {
             desc="Смотри, где уже побывали друзья, и сравнивай прогресс"
           />
         </div>
+
+        <section className="mt-16 text-left sm:mt-20">
+          <div className="mb-6">
+            <h2 className="flex items-center justify-center gap-2 text-2xl font-bold sm:justify-start">
+              <Trophy className="h-7 w-7 text-amber-400" />
+              Лидерборд
+            </h2>
+            <p className="mt-1 text-center text-sm text-zinc-500 sm:text-left">
+              Топ-50 по числу посещённых стран (из {TOTAL_COUNTRIES})
+            </p>
+          </div>
+          <LeaderboardList entries={entries} />
+        </section>
       </main>
     </div>
   );

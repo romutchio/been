@@ -1,5 +1,6 @@
 import { getCurrentProfile, getLeaderboard } from "@/lib/data";
 import { TOTAL_COUNTRIES } from "@/lib/countries";
+import { LeaderboardList } from "@/components/LeaderboardList";
 import { Trophy } from "lucide-react";
 
 export default async function LeaderboardPage() {
@@ -19,7 +20,7 @@ export default async function LeaderboardPage() {
           Лидерборд
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Рейтинг по числу посещённых стран (из {TOTAL_COUNTRIES})
+          Топ-50 по числу посещённых стран (из {TOTAL_COUNTRIES})
         </p>
       </div>
 
@@ -32,56 +33,7 @@ export default async function LeaderboardPage() {
         </div>
       )}
 
-      {entries.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Пока никто не отметил страны на карте
-        </p>
-      ) : (
-        <ol className="space-y-2">
-          {entries.map((entry) => {
-            const isMe = entry.profile.id === profile.id;
-            return (
-              <li
-                key={entry.profile.id}
-                className={`flex items-center gap-4 rounded-xl border px-4 py-3 ${
-                  isMe
-                    ? "border-emerald-500/30 bg-emerald-500/5"
-                    : "border-white/10 bg-white/5"
-                }`}
-              >
-                <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
-                    entry.rank === 1
-                      ? "bg-amber-500/20 text-amber-400"
-                      : entry.rank === 2
-                        ? "bg-zinc-400/20 text-zinc-300"
-                        : entry.rank === 3
-                          ? "bg-orange-600/20 text-orange-400"
-                          : "bg-white/10 text-zinc-400"
-                  }`}
-                >
-                  {entry.rank}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">
-                    {entry.profile.display_name ?? entry.profile.username}
-                    {isMe && (
-                      <span className="ml-2 text-xs text-emerald-400">ты</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-zinc-500">@{entry.profile.username}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-semibold tabular-nums">
-                    {entry.countries}
-                  </p>
-                  <p className="text-xs text-zinc-500">стран</p>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
-      )}
+      <LeaderboardList entries={entries} currentUserId={profile.id} />
     </div>
   );
 }

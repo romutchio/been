@@ -91,7 +91,9 @@ const fetchLeaderboard = unstable_cache(
       set.add(v.country_code);
     }
 
-    const sorted = [...counts.entries()].sort((a, b) => b[1].size - a[1].size);
+    const sorted = [...counts.entries()]
+      .sort((a, b) => b[1].size - a[1].size)
+      .slice(0, 50);
     if (sorted.length === 0) return [];
 
     const userIds = sorted.map(([id]) => id);

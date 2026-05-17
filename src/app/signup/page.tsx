@@ -17,7 +17,7 @@ export default function SignupPage() {
           href="/"
           className="mb-8 block text-center text-xl font-bold text-emerald-400"
         >
-          been
+          mutchio
         </Link>
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <h1 className="text-2xl font-bold">Регистрация</h1>
@@ -31,7 +31,6 @@ export default function SignupPage() {
               required
               autoComplete="username"
               pattern="[a-z0-9_]{3,24}"
-              placeholder="romutchio"
               hint="Латиница, цифры, _ · 3–24 символа"
             />
             <AuthField

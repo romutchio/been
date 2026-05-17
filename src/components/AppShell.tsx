@@ -39,7 +39,7 @@ export function AppShell({ username, children }: Props) {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
               <Globe className="h-4 w-4" />
             </span>
-            been
+            mutchio
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-sm text-zinc-500 sm:inline">
@@ -56,7 +56,8 @@ export function AppShell({ username, children }: Props) {
             </form>
           </div>
         </div>
-        <nav className="mx-auto flex max-w-6xl gap-1 px-4 pb-2">
+        <nav className="mx-auto max-w-6xl overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max gap-1">
           {nav.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href);
             return (
@@ -64,7 +65,7 @@ export function AppShell({ username, children }: Props) {
                 key={href}
                 href={href}
                 prefetch
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition ${
+                className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm whitespace-nowrap transition ${
                   active
                     ? "bg-emerald-500/15 text-emerald-400"
                     : "text-zinc-400 hover:bg-white/5 hover:text-white"
@@ -75,6 +76,7 @@ export function AppShell({ username, children }: Props) {
               </Link>
             );
           })}
+          </div>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
