@@ -31,7 +31,7 @@ export default function SignupPage() {
               required
               autoComplete="username"
               pattern="[a-z0-9_]{3,24}"
-              hint="Латиница, цифры, _ · 3–24 символа"
+              hint="Латиница строчные, цифры, _ · 3–24 символа"
             />
             <AuthField
               label="Имя (необязательно)"
@@ -69,7 +69,6 @@ export default function SignupPage() {
     </div>
   );
 }
-
 function AuthField({
   label,
   hint,
@@ -89,3 +88,4 @@ function AuthField({
     </label>
   );
 }
+
