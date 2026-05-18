@@ -1,10 +1,11 @@
 import { getCurrentProfile, getLeaderboard } from "@/lib/data";
-import { TOTAL_COUNTRIES } from "@/lib/countries";
+import { LeaderboardIntro } from "@/components/LeaderboardIntro";
 import { LeaderboardList } from "@/components/LeaderboardList";
+import { pluralCountries } from "@/lib/plural";
 import { Trophy } from "lucide-react";
 
 export default async function LeaderboardPage() {
-  const [profile, entries] = await Promise.all([
+  const [profile, { entries, travelerCount }] = await Promise.all([
     getCurrentProfile(),
     getLeaderboard(),
   ]);
@@ -19,9 +20,7 @@ export default async function LeaderboardPage() {
           <Trophy className="h-7 w-7 text-amber-400" />
           Лидерборд
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          Топ-50 по числу посещённых стран (из {TOTAL_COUNTRIES})
-        </p>
+        <LeaderboardIntro travelerCount={travelerCount} />
       </div>
 
       {myEntry && (
@@ -36,14 +35,4 @@ export default async function LeaderboardPage() {
       <LeaderboardList entries={entries} currentUserId={profile.id} />
     </div>
   );
-}
-
-function pluralCountries(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return "страна";
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
-    return "страны";
-  }
-  return "стран";
 }

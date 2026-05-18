@@ -3,14 +3,14 @@ import { getSessionUserId } from "@/lib/auth/session";
 import { getLeaderboard } from "@/lib/data";
 import { redirect } from "next/navigation";
 import { Globe, Map, Users, Heart, Trophy } from "lucide-react";
+import { LeaderboardIntro } from "@/components/LeaderboardIntro";
 import { LeaderboardList } from "@/components/LeaderboardList";
-import { TOTAL_COUNTRIES } from "@/lib/countries";
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
   if (userId) redirect("/map");
 
-  const entries = await getLeaderboard();
+  const { entries, travelerCount } = await getLeaderboard();
 
   return (
     <div className="min-h-full bg-[#07090d] text-zinc-100">
@@ -76,9 +76,10 @@ export default async function HomePage() {
               <Trophy className="h-7 w-7 text-amber-400" />
               Лидерборд
             </h2>
-            <p className="mt-1 text-center text-sm text-zinc-500 sm:text-left">
-              Топ-50 по числу посещённых стран (из {TOTAL_COUNTRIES})
-            </p>
+            <LeaderboardIntro
+              travelerCount={travelerCount}
+              className="text-center sm:text-left"
+            />
           </div>
           <LeaderboardList entries={entries} />
         </section>

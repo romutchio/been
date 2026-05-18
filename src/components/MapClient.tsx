@@ -1,11 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { WorldMap } from "@/components/WorldMap";
 import { CountryPanel } from "@/components/CountryPanel";
 import { CountrySearch } from "@/components/CountrySearch";
 import { StatsBar } from "@/components/StatsBar";
-import { addVisit } from "@/app/actions";
+import { CountryListModal } from "@/components/CountryListModal";
+import { CountryActionModal } from "@/components/CountryActionModal";
+
+type ListMode = "visited" | "all";
 
 type Props = {
   visited: string[];
@@ -22,7 +25,8 @@ export function MapClient({
 }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const [focusCode, setFocusCode] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [listMode, setListMode] = useState<ListMode | null>(null);
+  const [modalCountry, setModalCountry] = useState<string | null>(null);
 
   const visitedSet = new Set(visited);
   const wishlistSet = new Set(wishlist);
@@ -34,11 +38,14 @@ export function MapClient({
     setFocusCode(code);
   }
 
-  function handleSearchSelect(code: string) {
+  function openCountryModal(code: string) {
+    setListMode(null);
+    setModalCountry(code);
     focusCountry(code);
-    if (!compareMode) {
-      startTransition(() => addVisit(code));
-    }
+  }
+
+  function closeCountryModal() {
+    setModalCountry(null);
   }
 
   return (
@@ -54,15 +61,17 @@ export function MapClient({
         </p>
       </div>
 
-      {!compareMode && <StatsBar visitedCodes={visited} />}
+      {!compareMode && (
+        <StatsBar
+          visitedCodes={visited}
+          onVisitedClick={() => setListMode("visited")}
+          onTotalClick={() => setListMode("all")}
+        />
+      )}
 
       <CountrySearch
-        placeholder={
-          compareMode
-            ? "Найти страну на карте…"
-            : "Найти страну и отметить посещение…"
-        }
-        onSelect={handleSearchSelect}
+        placeholder="Найти страну на карте…"
+        onSelect={focusCountry}
       />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
@@ -97,6 +106,24 @@ export function MapClient({
           <MapLegend showFriend={!!friendSet} compareMode={compareMode} />
         </div>
       </div>
+
+      {listMode && !compareMode && (
+        <CountryListModal
+          mode={listMode}
+          visitedSet={visitedSet}
+          onClose={() => setListMode(null)}
+          onSelectCountry={openCountryModal}
+        />
+      )}
+
+      {modalCountry && !compareMode && (
+        <CountryActionModal
+          code={modalCountry}
+          myVisited={visitedSet.has(modalCountry)}
+          wished={wishlistSet.has(modalCountry)}
+          onClose={closeCountryModal}
+        />
+      )}
     </div>
   );
 }

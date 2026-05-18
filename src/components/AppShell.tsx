@@ -42,9 +42,12 @@ export function AppShell({ username, children }: Props) {
             mutchio
           </Link>
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-zinc-500 sm:inline">
+            <Link
+              href={`/info/${username}`}
+              className="text-sm text-zinc-500 hover:text-emerald-400"
+            >
               @{username}
-            </span>
+            </Link>
             <form action={signOutAction}>
               <button
                 type="submit"

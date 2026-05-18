@@ -93,8 +93,13 @@ export type LeaderboardEntry = {
   countries: number;
 };
 
+export type LeaderboardData = {
+  entries: LeaderboardEntry[];
+  travelerCount: number;
+};
+
 const fetchLeaderboard = unstable_cache(
-  async (): Promise<LeaderboardEntry[]> => {
+  async (): Promise<LeaderboardData> => {
     const supabase = createClient();
 
     const { data: visits } = await supabase
@@ -111,10 +116,12 @@ const fetchLeaderboard = unstable_cache(
       set.add(v.country_code);
     }
 
+    const travelerCount = counts.size;
+
     const sorted = [...counts.entries()]
       .sort((a, b) => b[1].size - a[1].size)
       .slice(0, 50);
-    if (sorted.length === 0) return [];
+    if (sorted.length === 0) return { entries: [], travelerCount };
 
     const userIds = sorted.map(([id]) => id);
     const { data: profiles } = await supabase
@@ -126,7 +133,7 @@ const fetchLeaderboard = unstable_cache(
       (profiles ?? []).map((p) => [p.id, p as Profile]),
     );
 
-    return sorted
+    const entries = sorted
       .map(([userId, codes], index) => {
         const profile = profileMap.get(userId);
         if (!profile) return null;
@@ -137,11 +144,13 @@ const fetchLeaderboard = unstable_cache(
         };
       })
       .filter((e): e is LeaderboardEntry => e !== null);
+
+    return { entries, travelerCount };
   },
   ["leaderboard"],
   { revalidate: 30 },
 );
 
-export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
+export async function getLeaderboard(): Promise<LeaderboardData> {
   return fetchLeaderboard();
 }
