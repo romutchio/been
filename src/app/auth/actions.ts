@@ -20,8 +20,6 @@ import { normalizeEmail, validateEmail } from "@/lib/auth/email";
 import { storeAuthToken, consumeAuthToken } from "@/lib/auth/tokens";
 import { getAppUrl } from "@/lib/email/config";
 import { sendPasswordResetEmail, sendVerifyEmail } from "@/lib/email/send";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/request";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { redirect } from "next/navigation";
 
@@ -48,10 +46,6 @@ export async function signUpAction(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const ip = await getClientIp();
-  const ipLimit = await checkRateLimit("signup_ip", ip, 5, HOUR);
-  if (!ipLimit.ok) return { error: ipLimit.message };
-
   const username = normalizeUsername((formData.get("username") as string) ?? "");
   const password = formData.get("password") as string;
   const displayName =
@@ -70,9 +64,6 @@ export async function signUpAction(
     const emailError = validateEmail(rawEmail);
     if (emailError) return { error: emailError };
     email = normalizeEmail(rawEmail);
-
-    const emailLimit = await checkRateLimit("signup_email", email, 3, HOUR);
-    if (!emailLimit.ok) return { error: emailLimit.message };
   }
 
   try {
@@ -149,17 +140,11 @@ export async function requestPasswordResetAction(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const ip = await getClientIp();
-  const ipLimit = await checkRateLimit("reset_ip", ip, 5, 15 * 60 * 1000);
-  if (!ipLimit.ok) return { error: ipLimit.message };
-
   const rawEmail = (formData.get("email") as string)?.trim() ?? "";
   const emailError = validateEmail(rawEmail);
   if (emailError) return { error: emailError };
 
   const email = normalizeEmail(rawEmail);
-  const emailLimit = await checkRateLimit("reset_email", email, 3, 15 * 60 * 1000);
-  if (!emailLimit.ok) return { error: emailLimit.message };
 
   const profile = await getProfileByVerifiedEmail(email);
 

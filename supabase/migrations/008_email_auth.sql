@@ -1,4 +1,4 @@
--- Email on profiles + auth tokens + rate limiting
+-- Email on profiles + auth tokens
 
 alter table public.profiles
   add column if not exists email text,
@@ -21,13 +21,3 @@ create table if not exists public.auth_tokens (
 create index if not exists auth_tokens_hash_idx on public.auth_tokens (token_hash);
 create index if not exists auth_tokens_user_type_idx
   on public.auth_tokens (user_id, type);
-
-create table if not exists public.rate_limit_log (
-  id uuid primary key default gen_random_uuid(),
-  action text not null,
-  identifier text not null,
-  created_at timestamptz not null default now()
-);
-
-create index if not exists rate_limit_log_lookup_idx
-  on public.rate_limit_log (action, identifier, created_at desc);

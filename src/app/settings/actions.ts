@@ -7,8 +7,6 @@ import { normalizeEmail, validateEmail } from "@/lib/auth/email";
 import { storeAuthToken } from "@/lib/auth/tokens";
 import { getAppUrl } from "@/lib/email/config";
 import { sendVerifyEmail } from "@/lib/email/send";
-import { checkRateLimit } from "@/lib/rate-limit";
-import { getClientIp } from "@/lib/request";
 
 export type SettingsState = {
   error?: string;
@@ -28,10 +26,6 @@ export async function updateEmailAction(
   formData: FormData,
 ): Promise<SettingsState> {
   const userId = await requireUserId();
-  const ip = await getClientIp();
-
-  const ipLimit = await checkRateLimit("email_update_ip", ip, 10, 60 * 60 * 1000);
-  if (!ipLimit.ok) return { error: ipLimit.message };
 
   const rawEmail = (formData.get("email") as string)?.trim() ?? "";
   if (!rawEmail) {
@@ -42,13 +36,6 @@ export async function updateEmailAction(
   if (emailError) return { error: emailError };
 
   const email = normalizeEmail(rawEmail);
-  const emailLimit = await checkRateLimit(
-    "email_update_email",
-    email,
-    3,
-    60 * 60 * 1000,
-  );
-  if (!emailLimit.ok) return { error: emailLimit.message };
 
   const supabase = createClient();
 
@@ -103,9 +90,6 @@ export async function updateEmailAction(
 
 export async function resendVerificationAction(): Promise<SettingsState> {
   const userId = await requireUserId();
-  const ip = await getClientIp();
-  const ipLimit = await checkRateLimit("verify_resend_ip", ip, 5, 60 * 60 * 1000);
-  if (!ipLimit.ok) return { error: ipLimit.message };
 
   const supabase = createClient();
   const { data: profile } = await supabase
