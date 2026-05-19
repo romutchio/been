@@ -25,7 +25,8 @@ export default function ForgotPasswordPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <h1 className="text-2xl font-bold">Сброс пароля</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Укажи подтверждённый email — пришлём ссылку
+            Только подтверждённый email из настроек аккаунта. На случайный адрес
+            письмо не придёт — это нормально.
           </p>
           {state?.success ? (
             <p className="mt-6 text-sm text-emerald-400">{state.success}</p>

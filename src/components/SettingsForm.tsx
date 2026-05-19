@@ -44,6 +44,8 @@ export function SettingsForm({ username, email, emailVerified }: Props) {
         </div>
         <p className="mb-4 text-sm text-zinc-500">
           Нужен для восстановления пароля. Подтверди email по ссылке из письма.
+          После смены адреса письмо уходит только на новый; сброс пароля
+          работает лишь после подтверждения.
         </p>
 
         {email && emailVerified && (
