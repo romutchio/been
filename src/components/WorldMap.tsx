@@ -12,6 +12,7 @@ import { ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 type Props = {
   visited: Set<string>;
   wishlist: Set<string>;
+  planned?: Set<string>;
   friendVisited?: Set<string>;
   onCountryClick?: (code: string) => void;
   selectedCode?: string | null;
@@ -31,6 +32,7 @@ function numericToCode(id: string): string | null {
 export function WorldMap({
   visited,
   wishlist,
+  planned,
   friendVisited,
   onCountryClick,
   selectedCode,
@@ -118,6 +120,7 @@ export function WorldMap({
     if (mine && friend) return "var(--map-both)";
     if (mine) return "var(--map-visited)";
     if (friend) return "var(--map-friend)";
+    if (planned?.has(code)) return "var(--map-planned)";
     if (wishlist.has(code)) return "var(--map-wishlist)";
     return "var(--map-default)";
   }

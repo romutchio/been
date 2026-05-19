@@ -6,21 +6,39 @@ import { createTrip, updateTrip } from "@/app/actions";
 import { CountrySearch } from "@/components/CountrySearch";
 import { CitySearch } from "@/components/CitySearch";
 import { getCountryName } from "@/lib/countries";
-import type { Trip, TripPayload } from "@/types/database";
+import { isTripPlanned } from "@/lib/trips";
+import type { Trip, TripPayload, TripStatus } from "@/types/database";
+
+type FriendOption = {
+  id: string;
+  username: string;
+  display_name: string | null;
+};
 
 type Props = {
   trip?: Trip | null;
+  friends: FriendOption[];
+  currentUserId: string;
   onCancel?: () => void;
   onSaved?: () => void;
 };
 
-export function TripEditor({ trip, onCancel, onSaved }: Props) {
+export function TripEditor({
+  trip,
+  friends,
+  currentUserId,
+  onCancel,
+  onSaved,
+}: Props) {
   const isEdit = !!trip;
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(trip?.title ?? "");
   const [notes, setNotes] = useState(trip?.notes ?? "");
   const [startDate, setStartDate] = useState(trip?.start_date ?? "");
   const [endDate, setEndDate] = useState(trip?.end_date ?? "");
+  const [status, setStatus] = useState<TripStatus>(
+    trip?.status ?? "planned",
+  );
   const [countries, setCountries] = useState<string[]>(
     trip?.trip_countries?.map((c) => c.country_code) ?? [],
   );
@@ -30,10 +48,15 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
       city_name: c.city_name,
     })) ?? [],
   );
+  const [memberIds, setMemberIds] = useState<string[]>(
+    trip?.trip_members?.map((m) => m.user_id) ?? [],
+  );
   const [cityCountry, setCityCountry] = useState<string | null>(
     countries[0] ?? null,
   );
   const [error, setError] = useState<string | null>(null);
+
+  const isOwner = !trip || trip.user_id === currentUserId;
 
   function addCountry(code: string) {
     if (!countries.includes(code)) {
@@ -73,6 +96,14 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
     );
   }
 
+  function toggleMember(friendId: string) {
+    setMemberIds((prev) =>
+      prev.includes(friendId)
+        ? prev.filter((id) => id !== friendId)
+        : [...prev, friendId],
+    );
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -82,8 +113,10 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
       notes: notes.trim() || null,
       start_date: startDate || null,
       end_date: endDate || null,
+      status,
       countries,
       cities,
+      member_ids: memberIds,
     };
 
     if (!payload.title) {
@@ -107,8 +140,10 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
           setNotes("");
           setStartDate("");
           setEndDate("");
+          setStatus("planned");
           setCountries([]);
           setCities([]);
+          setMemberIds([]);
           setCityCountry(null);
         }
       } catch (err) {
@@ -137,12 +172,32 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
         )}
       </div>
 
+      <div className="grid grid-cols-2 gap-2">
+        <StatusButton
+          active={status === "planned"}
+          onClick={() => setStatus("planned")}
+          label="Запланирована"
+          hint="Страны на карте голубым, без отметки «посещено»"
+          color="sky"
+          disabled={!isOwner}
+        />
+        <StatusButton
+          active={status === "completed"}
+          onClick={() => setStatus("completed")}
+          label="Завершена"
+          hint="Страны отмечаются как посещённые"
+          color="emerald"
+          disabled={!isOwner}
+        />
+      </div>
+
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         required
-        placeholder="Название (например, Италия 2024)"
-        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50"
+        disabled={!isOwner}
+        placeholder="Название (например, Италия 2026)"
+        className="w-full rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50 disabled:opacity-60"
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -150,37 +205,70 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
-          className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50"
+          disabled={!isOwner}
+          className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50 disabled:opacity-60"
         />
         <input
           type="date"
           value={endDate}
           onChange={(e) => setEndDate(e.target.value)}
-          className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50"
+          disabled={!isOwner}
+          className="rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50 disabled:opacity-60"
         />
       </div>
 
       <textarea
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
+        disabled={!isOwner}
         rows={2}
         placeholder="Заметки (необязательно)"
-        className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50"
+        className="w-full resize-none rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm outline-none focus:border-emerald-500/50 disabled:opacity-60"
       />
+
+      {isOwner && friends.length > 0 && (
+        <div>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Участники
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {friends.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => toggleMember(f.id)}
+                className={`rounded-lg px-2.5 py-1.5 text-xs transition ${
+                  memberIds.includes(f.id)
+                    ? "bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/40"
+                    : "bg-white/10 text-zinc-400 hover:text-white"
+                }`}
+              >
+                {f.display_name ?? f.username}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
           Страны
         </p>
-        <CountrySearch
-          placeholder="Найти и добавить страну…"
-          onSelect={addCountry}
-          exclude={new Set(countries)}
-        />
+        {isOwner && (
+          <CountrySearch
+            placeholder="Найти и добавить страну…"
+            onSelect={addCountry}
+            exclude={new Set(countries)}
+          />
+        )}
         {countries.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1.5">
             {countries.map((code) => (
-              <Tag key={code} onRemove={() => removeCountry(code)}>
+              <Tag
+                key={code}
+                color={isTripPlanned({ status }) ? "sky" : "emerald"}
+                onRemove={isOwner ? () => removeCountry(code) : undefined}
+              >
                 {getCountryName(code)}
               </Tag>
             ))}
@@ -188,7 +276,7 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
         )}
       </div>
 
-      {countries.length > 0 && (
+      {countries.length > 0 && isOwner && (
         <div>
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
             Города
@@ -251,30 +339,78 @@ export function TripEditor({ trip, onCancel, onSaved }: Props) {
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
-      >
-        {pending ? "Сохранение…" : isEdit ? "Сохранить" : "Добавить поездку"}
-      </button>
+      {isOwner && (
+        <button
+          type="submit"
+          disabled={pending}
+          className="w-full rounded-lg bg-emerald-600 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+        >
+          {pending ? "Сохранение…" : isEdit ? "Сохранить" : "Добавить поездку"}
+        </button>
+      )}
     </form>
+  );
+}
+
+function StatusButton({
+  active,
+  onClick,
+  label,
+  hint,
+  color,
+  disabled,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  hint: string;
+  color: "sky" | "emerald";
+  disabled?: boolean;
+}) {
+  const activeClass =
+    color === "sky"
+      ? "border-sky-500/40 bg-sky-500/15 text-sky-300"
+      : "border-emerald-500/40 bg-emerald-500/15 text-emerald-300";
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`rounded-lg border px-3 py-2 text-left text-sm transition disabled:opacity-50 ${
+        active ? activeClass : "border-white/10 bg-black/20 text-zinc-400"
+      }`}
+    >
+      <span className="font-medium">{label}</span>
+      <span className="mt-0.5 block text-xs opacity-80">{hint}</span>
+    </button>
   );
 }
 
 function Tag({
   children,
   onRemove,
+  color,
 }: {
   children: React.ReactNode;
-  onRemove: () => void;
+  onRemove?: () => void;
+  color: "sky" | "emerald";
 }) {
+  const colorClass =
+    color === "sky"
+      ? "bg-sky-500/15 text-sky-300"
+      : "bg-emerald-500/15 text-emerald-400";
+
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-xs text-emerald-400">
+    <span
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${colorClass}`}
+    >
       {children}
-      <button type="button" onClick={onRemove} className="hover:text-white">
-        <X className="h-3 w-3" />
-      </button>
+      {onRemove && (
+        <button type="button" onClick={onRemove} className="hover:text-white">
+          <X className="h-3 w-3" />
+        </button>
+      )}
     </span>
   );
 }

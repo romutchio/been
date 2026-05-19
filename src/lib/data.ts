@@ -2,7 +2,8 @@ import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import { getSessionUserId } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
-import type { Profile, Trip } from "@/types/database";
+import { getPlannedCountryCodes, getTripsForUser } from "@/lib/trips";
+import type { Profile } from "@/types/database";
 
 export const getCurrentProfile = cache(async () => {
   const userId = await getSessionUserId();
@@ -35,27 +36,24 @@ export const getProfileWithTravel = cache(async () => {
 export const getUserTravelData = cache(async (userId: string) => {
   const supabase = createClient();
 
-  const [visitsRes, wishlistRes] = await Promise.all([
+  const [visitsRes, wishlistRes, planned] = await Promise.all([
     supabase.from("visits").select("country_code").eq("user_id", userId),
     supabase.from("wishlist").select("country_code").eq("user_id", userId),
+    getPlannedCountryCodes(userId),
   ]);
 
   return {
     visited: (visitsRes.data ?? []).map((v) => v.country_code),
     wishlist: (wishlistRes.data ?? []).map((w) => w.country_code),
+    planned,
   };
 });
 
 export async function getTrips(userId: string) {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from("trips")
-    .select("*, trip_countries(country_code), trip_cities(id, country_code, city_name)")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-
-  return (data ?? []) as Trip[];
+  return getTripsForUser(userId);
 }
+
+export { getAcceptedFriends } from "@/lib/trips";
 
 export async function getFriendProfile(friendId: string) {
   const supabase = createClient();

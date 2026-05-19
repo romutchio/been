@@ -15,8 +15,17 @@ export default async function MapPage({ searchParams }: Props) {
   const { friend: friendId } = await searchParams;
   const me = await getProfileWithTravel();
   if (!me) return null;
-  const { profile, visited: visitedList, wishlist: wishlistList } = me;
-  const own = { visited: visitedList, wishlist: wishlistList };
+  const {
+    profile,
+    visited: visitedList,
+    wishlist: wishlistList,
+    planned: plannedList,
+  } = me;
+  const own = {
+    visited: visitedList,
+    wishlist: wishlistList,
+    planned: plannedList,
+  };
 
   if (friendId) {
     const friend = await getFriendProfile(friendId);
@@ -65,6 +74,7 @@ export default async function MapPage({ searchParams }: Props) {
         <MapClient
           visited={own.visited}
           wishlist={own.wishlist}
+          planned={own.planned}
           friendVisited={friendData.visited}
           friendName={friend.display_name ?? friend.username}
         />
@@ -73,6 +83,10 @@ export default async function MapPage({ searchParams }: Props) {
   }
 
   return (
-    <MapClient visited={own.visited} wishlist={own.wishlist} />
+    <MapClient
+      visited={own.visited}
+      wishlist={own.wishlist}
+      planned={own.planned}
+    />
   );
 }

@@ -29,6 +29,13 @@ export type TripCity = {
   city_name: string;
 };
 
+export type TripStatus = "planned" | "completed";
+
+export type TripMember = {
+  user_id: string;
+  profile?: Pick<Profile, "id" | "username" | "display_name">;
+};
+
 export type Trip = {
   id: string;
   user_id: string;
@@ -36,9 +43,11 @@ export type Trip = {
   notes: string | null;
   start_date: string | null;
   end_date: string | null;
+  status: TripStatus;
   created_at: string;
   trip_countries?: { country_code: string }[];
   trip_cities?: TripCity[];
+  trip_members?: TripMember[];
 };
 
 export type Friendship = {
@@ -56,6 +65,8 @@ export type TripPayload = {
   notes: string | null;
   start_date: string | null;
   end_date: string | null;
+  status: TripStatus;
   countries: string[];
   cities: { country_code: string; city_name: string }[];
+  member_ids: string[];
 };

@@ -13,6 +13,7 @@ type ListMode = "visited" | "all";
 type Props = {
   visited: string[];
   wishlist: string[];
+  planned?: string[];
   friendVisited?: string[];
   friendName?: string;
 };
@@ -20,6 +21,7 @@ type Props = {
 export function MapClient({
   visited,
   wishlist,
+  planned = [],
   friendVisited,
   friendName,
 }: Props) {
@@ -30,6 +32,7 @@ export function MapClient({
 
   const visitedSet = new Set(visited);
   const wishlistSet = new Set(wishlist);
+  const plannedSet = new Set(planned);
   const friendSet = friendVisited ? new Set(friendVisited) : undefined;
   const compareMode = !!friendName;
 
@@ -57,7 +60,7 @@ export function MapClient({
         <p className="mt-1 text-sm text-zinc-500">
           {compareMode
             ? "Зелёный — только вы · фиолетовый — только друг · красный — оба"
-            : "Кликни на страну или найди через поиск"}
+            : "Зелёный — посещено · голубой — запланировано"}
         </p>
       </div>
 
@@ -78,6 +81,7 @@ export function MapClient({
         <WorldMap
           visited={visitedSet}
           wishlist={wishlistSet}
+          planned={plannedSet}
           friendVisited={friendSet}
           selectedCode={selected}
           focusCode={focusCode}
@@ -147,7 +151,10 @@ function MapLegend({
         </>
       )}
       {!compareMode && (
-        <Legend color="var(--map-wishlist)" label="Хочу" />
+        <>
+          <Legend color="var(--map-planned)" label="Запланировано" />
+          <Legend color="var(--map-wishlist)" label="Хочу" />
+        </>
       )}
       <Legend color="var(--map-default)" label="Никто" />
     </div>

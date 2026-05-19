@@ -71,7 +71,12 @@ async function saveTripRelations(
 function parseTripPayload(formData: FormData): TripPayload {
   const payloadRaw = formData.get("payload") as string;
   if (payloadRaw) {
-    return JSON.parse(payloadRaw) as TripPayload;
+    const parsed = JSON.parse(payloadRaw) as TripPayload;
+    return {
+      ...parsed,
+      status: parsed.status === "planned" ? "planned" : "completed",
+      member_ids: parsed.member_ids ?? [],
+    };
   }
 
   return {
@@ -79,12 +84,58 @@ function parseTripPayload(formData: FormData): TripPayload {
     notes: (formData.get("notes") as string)?.trim() || null,
     start_date: (formData.get("start_date") as string) || null,
     end_date: (formData.get("end_date") as string) || null,
+    status: "completed",
     countries: formData
       .getAll("countries")
       .map((c) => String(c).trim().toUpperCase())
       .filter(Boolean),
     cities: [],
+    member_ids: [],
   };
+}
+
+async function assertFriends(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  ownerId: string,
+  memberIds: string[],
+) {
+  const unique = [...new Set(memberIds.filter((id) => id && id !== ownerId))];
+  if (unique.length === 0) return unique;
+
+  const { data: friendships } = await supabase
+    .from("friendships")
+    .select("requester_id, addressee_id")
+    .eq("status", "accepted")
+    .or(`requester_id.eq.${ownerId},addressee_id.eq.${ownerId}`);
+
+  const friendIds = new Set<string>();
+  for (const f of friendships ?? []) {
+    friendIds.add(f.requester_id === ownerId ? f.addressee_id : f.requester_id);
+  }
+
+  for (const id of unique) {
+    if (!friendIds.has(id)) {
+      throw new Error("Можно добавлять только друзей в поездку");
+    }
+  }
+  return unique;
+}
+
+async function saveTripMembers(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tripId: string,
+  ownerId: string,
+  memberIds: string[],
+) {
+  const valid = await assertFriends(supabase, ownerId, memberIds);
+
+  await supabase.from("trip_members").delete().eq("trip_id", tripId);
+
+  if (valid.length > 0) {
+    await supabase.from("trip_members").insert(
+      valid.map((user_id) => ({ trip_id: tripId, user_id })),
+    );
+  }
 }
 
 export async function toggleVisit(countryCode: string, visitedAt?: string) {
@@ -192,6 +243,7 @@ export async function createTrip(formData: FormData) {
       notes: payload.notes,
       start_date: payload.start_date,
       end_date: payload.end_date,
+      status: payload.status,
     })
     .select("id")
     .single();
@@ -199,12 +251,16 @@ export async function createTrip(formData: FormData) {
   if (error || !trip) throw new Error(error?.message ?? "Failed to create trip");
 
   await saveTripRelations(supabase, trip.id, payload);
-  await syncVisitsFromCountries(
-    supabase,
-    user.id,
-    payload.countries,
-    payload.start_date,
-  );
+  await saveTripMembers(supabase, trip.id, user.id, payload.member_ids);
+
+  if (payload.status === "completed") {
+    await syncVisitsFromCountries(
+      supabase,
+      user.id,
+      payload.countries,
+      payload.start_date,
+    );
+  }
 
   revalidatePath("/trips");
   revalidateVisits();
@@ -223,6 +279,7 @@ export async function updateTrip(tripId: string, formData: FormData) {
       notes: payload.notes,
       start_date: payload.start_date,
       end_date: payload.end_date,
+      status: payload.status,
     })
     .eq("id", tripId)
     .eq("user_id", user.id);
@@ -230,11 +287,49 @@ export async function updateTrip(tripId: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   await saveTripRelations(supabase, tripId, payload);
+  await saveTripMembers(supabase, tripId, user.id, payload.member_ids);
+
+  if (payload.status === "completed") {
+    await syncVisitsFromCountries(
+      supabase,
+      user.id,
+      payload.countries,
+      payload.start_date,
+    );
+  }
+
+  revalidatePath("/trips");
+  revalidateVisits();
+}
+
+export async function completeTrip(tripId: string) {
+  const { supabase, user } = await requireUser();
+
+  const { data: trip } = await supabase
+    .from("trips")
+    .select("id, start_date, trip_countries(country_code)")
+    .eq("id", tripId)
+    .eq("user_id", user.id)
+    .eq("status", "planned")
+    .maybeSingle();
+
+  if (!trip) throw new Error("Поездка не найдена или уже завершена");
+
+  const countries =
+    trip.trip_countries?.map((c) => c.country_code) ?? [];
+
+  const { error } = await supabase
+    .from("trips")
+    .update({ status: "completed" })
+    .eq("id", tripId);
+
+  if (error) throw new Error(error.message);
+
   await syncVisitsFromCountries(
     supabase,
     user.id,
-    payload.countries,
-    payload.start_date,
+    countries,
+    trip.start_date,
   );
 
   revalidatePath("/trips");
@@ -245,6 +340,7 @@ export async function deleteTrip(tripId: string) {
   const { supabase, user } = await requireUser();
   await supabase.from("trips").delete().eq("id", tripId).eq("user_id", user.id);
   revalidatePath("/trips");
+  revalidateVisits();
 }
 
 export async function sendFriendRequest(username: string) {
