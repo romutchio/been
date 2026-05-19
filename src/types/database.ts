@@ -4,6 +4,8 @@ export type Profile = {
   id: string;
   username: string;
   display_name: string | null;
+  email: string | null;
+  email_verified_at: string | null;
   created_at: string;
 };
 

@@ -22,7 +22,7 @@ export default function SignupPage() {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <h1 className="text-2xl font-bold">Регистрация</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Логин и пароль — без почты
+            Логин и пароль. Email необязателен — для восстановления пароля.
           </p>
           <form action={formAction} className="mt-6 space-y-4">
             <AuthField
@@ -37,6 +37,13 @@ export default function SignupPage() {
               label="Имя (необязательно)"
               name="display_name"
               placeholder="Как показывать друзьям"
+            />
+            <AuthField
+              label="Email (необязательно)"
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder="Для восстановления пароля"
             />
             <AuthField
               label="Пароль"

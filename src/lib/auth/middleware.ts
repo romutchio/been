@@ -7,13 +7,16 @@ export async function updateSession(request: NextRequest) {
 
   const isAuthPage =
     request.nextUrl.pathname.startsWith("/login") ||
-    request.nextUrl.pathname.startsWith("/signup");
+    request.nextUrl.pathname.startsWith("/signup") ||
+    request.nextUrl.pathname.startsWith("/forgot-password") ||
+    request.nextUrl.pathname.startsWith("/reset-password");
   const isProtected =
     request.nextUrl.pathname.startsWith("/map") ||
     request.nextUrl.pathname.startsWith("/trips") ||
     request.nextUrl.pathname.startsWith("/wishlist") ||
     request.nextUrl.pathname.startsWith("/friends") ||
-    request.nextUrl.pathname.startsWith("/leaderboard");
+    request.nextUrl.pathname.startsWith("/leaderboard") ||
+    request.nextUrl.pathname.startsWith("/settings");
 
   if (!userId && isProtected) {
     const url = request.nextUrl.clone();

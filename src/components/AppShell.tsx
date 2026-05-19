@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Globe, Heart, LogOut, Map, Trophy, Users } from "lucide-react";
+import { Globe, Heart, LogOut, Map, Settings, Trophy, Users } from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
 import { loadWorldMapGeo } from "@/lib/world-topology";
 
@@ -47,6 +47,17 @@ export function AppShell({ username, children }: Props) {
               className="text-sm text-zinc-500 hover:text-emerald-400"
             >
               @{username}
+            </Link>
+            <Link
+              href="/settings"
+              className={`rounded-lg p-2 transition ${
+                pathname.startsWith("/settings")
+                  ? "bg-emerald-500/15 text-emerald-400"
+                  : "text-zinc-400 hover:bg-white/10 hover:text-white"
+              }`}
+              aria-label="Настройки"
+            >
+              <Settings className="h-4 w-4" />
             </Link>
             <form action={signOutAction}>
               <button
