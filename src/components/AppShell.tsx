@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Globe, Heart, LogOut, Map, Settings, Trophy, Users } from "lucide-react";
+import {
+  Globe,
+  Heart,
+  LifeBuoy,
+  LogOut,
+  Map,
+  Newspaper,
+  Settings,
+  Trophy,
+  Users,
+} from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
 import { loadWorldMapGeo } from "@/lib/world-topology";
 
@@ -13,6 +23,8 @@ const nav = [
   { href: "/wishlist", label: "Wishlist", icon: Heart },
   { href: "/friends", label: "Друзья", icon: Users },
   { href: "/leaderboard", label: "Лидерборд", icon: Trophy },
+  { href: "/news", label: "Новости", icon: Newspaper },
+  { href: "/support", label: "Поддержка", icon: LifeBuoy },
 ] as const;
 
 type Props = {

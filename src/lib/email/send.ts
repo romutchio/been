@@ -1,8 +1,10 @@
 import { Resend } from "resend";
-import { getEmailFrom } from "@/lib/email/config";
+import { getEmailFrom, getSupportEmailTo } from "@/lib/email/config";
 import {
   passwordResetEmailHtml,
   passwordResetEmailText,
+  supportEmailHtml,
+  supportEmailText,
   verifyEmailHtml,
   verifyEmailText,
 } from "@/lib/email/templates";
@@ -41,6 +43,24 @@ export async function sendVerifyEmail(params: {
     subject: "Подтвердите email на mutchio",
     html: verifyEmailHtml(params),
     text: verifyEmailText(params),
+  });
+  if (error) throw new Error(error.message);
+}
+
+export async function sendSupportEmail(params: {
+  fromEmail: string;
+  username: string;
+  userId: string;
+  message: string;
+}) {
+  const resend = getResend();
+  const { error } = await resend.emails.send({
+    from: getEmailFrom(),
+    to: getSupportEmailTo(),
+    replyTo: params.fromEmail,
+    subject: `Поддержка mutchio — @${params.username}`,
+    html: supportEmailHtml(params),
+    text: supportEmailText(params),
   });
   if (error) throw new Error(error.message);
 }

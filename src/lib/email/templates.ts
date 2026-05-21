@@ -81,3 +81,47 @@ ${params.verifyUrl}
 
 — mutchio`;
 }
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+export function supportEmailHtml(params: {
+  fromEmail: string;
+  username: string;
+  userId: string;
+  message: string;
+}): string {
+  const body = `
+<tr><td style="padding:24px 32px 8px"><h1 style="margin:0;font-size:22px;font-weight:700;color:#f4f4f5">Поддержка mutchio</h1></td></tr>
+<tr><td style="padding:0 32px 16px"><p style="margin:0;font-size:15px;line-height:1.6;color:#a1a1aa">
+От: <strong style="color:#e4e4e7">${escapeHtml(params.fromEmail)}</strong><br/>
+Аккаунт: <strong style="color:#e4e4e7">@${escapeHtml(params.username)}</strong><br/>
+ID: <span style="color:#71717a;font-size:13px">${escapeHtml(params.userId)}</span>
+</p></td></tr>
+<tr><td style="padding:0 32px 24px">
+<p style="margin:0;font-size:15px;line-height:1.6;color:#d4d4d8;white-space:pre-wrap">${escapeHtml(params.message)}</p>
+</td></tr>`;
+  return layout("Поддержка — mutchio", body);
+}
+
+export function supportEmailText(params: {
+  fromEmail: string;
+  username: string;
+  userId: string;
+  message: string;
+}): string {
+  return `Поддержка mutchio
+
+От: ${params.fromEmail}
+Аккаунт: @${params.username}
+ID: ${params.userId}
+
+---
+${params.message}
+`;
+}

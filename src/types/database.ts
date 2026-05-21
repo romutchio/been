@@ -62,6 +62,14 @@ export type Friendship = {
   addressee?: Profile;
 };
 
+export type WallPost = {
+  id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  profile?: Pick<Profile, "id" | "username" | "display_name">;
+};
+
 export type TripPayload = {
   title: string;
   notes: string | null;

@@ -16,6 +16,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/wishlist") ||
     request.nextUrl.pathname.startsWith("/friends") ||
     request.nextUrl.pathname.startsWith("/leaderboard") ||
+    request.nextUrl.pathname.startsWith("/news") ||
+    request.nextUrl.pathname.startsWith("/support") ||
     request.nextUrl.pathname.startsWith("/settings");
 
   if (!userId && isProtected) {
