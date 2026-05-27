@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { TelegramAuthGate } from "@/components/TelegramAuthGate";
 import { getSessionUserId } from "@/lib/auth/session";
 import { redirect } from "next/navigation";
@@ -10,5 +11,15 @@ export default async function SignupLayout({
   const userId = await getSessionUserId();
   if (userId) redirect("/map");
 
-  return <TelegramAuthGate hasSession={false}>{children}</TelegramAuthGate>;
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-full items-center justify-center bg-[#07090d]">
+          <p className="text-sm text-zinc-500">Загрузка…</p>
+        </div>
+      }
+    >
+      <TelegramAuthGate hasSession={false}>{children}</TelegramAuthGate>
+    </Suspense>
+  );
 }

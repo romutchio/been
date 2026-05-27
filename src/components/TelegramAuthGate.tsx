@@ -7,8 +7,8 @@ import {
   enableTelegramPasswordLogin,
   isTelegramPasswordLogin,
 } from "@/lib/telegram-client";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type Props = {
   hasSession: boolean;
@@ -18,21 +18,40 @@ type Props = {
 export function TelegramAuthGate({ hasSession, children }: Props) {
   const { isTelegram, isReady, initData } = useTelegram();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const passwordFromUrl = searchParams.get("password") === "1";
+
   const [error, setError] = useState<string | null>(null);
   const [needsChoice, setNeedsChoice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [passwordMode, setPasswordMode] = useState(false);
   const tried = useRef(false);
 
+  const skipTelegramAuth =
+    passwordFromUrl ||
+    passwordMode ||
+    (typeof window !== "undefined" && isTelegramPasswordLogin());
+
+  const openPasswordLogin = useCallback(() => {
+    enableTelegramPasswordLogin();
+    tried.current = true;
+    setPasswordMode(true);
+    setNeedsChoice(false);
+    setBusy(false);
+    setError(null);
+    router.replace("/login?password=1");
+  }, [router]);
+
   useEffect(() => {
-    if (isTelegramPasswordLogin()) {
+    if (passwordFromUrl || isTelegramPasswordLogin()) {
       setPasswordMode(true);
+      tried.current = true;
     }
-  }, []);
+  }, [passwordFromUrl]);
 
   useEffect(() => {
     if (
-      passwordMode ||
+      skipTelegramAuth ||
       !isReady ||
       !isTelegram ||
       hasSession ||
@@ -62,14 +81,14 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
       }
       setBusy(false);
     });
-  }, [passwordMode, isReady, isTelegram, hasSession, initData, router]);
+  }, [skipTelegramAuth, isReady, isTelegram, hasSession, initData, router]);
 
-  if (isTelegram && !hasSession && passwordMode) {
+  if (isTelegram && !hasSession && (passwordMode || passwordFromUrl)) {
     return children;
   }
 
   if (isTelegram && !hasSession && needsChoice) {
-    return <TelegramOnboarding />;
+    return <TelegramOnboarding onUsePassword={openPasswordLogin} />;
   }
 
   if (isTelegram && !hasSession && (busy || !tried.current)) {
@@ -88,13 +107,7 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
         <p className="text-center text-sm text-red-400">{error}</p>
         <button
           type="button"
-          onClick={() => {
-            enableTelegramPasswordLogin();
-            setPasswordMode(true);
-            setNeedsChoice(false);
-            setError(null);
-            tried.current = true;
-          }}
+          onClick={openPasswordLogin}
           className="text-sm text-emerald-400 hover:underline"
         >
           Войти по логину и паролю

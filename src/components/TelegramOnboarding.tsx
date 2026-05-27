@@ -2,21 +2,18 @@
 
 import { registerWithTelegramAction } from "@/app/auth/telegram/actions";
 import { useTelegram } from "@/components/TelegramProvider";
-import { enableTelegramPasswordLogin } from "@/lib/telegram-client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function TelegramOnboarding() {
+type Props = {
+  onUsePassword: () => void;
+};
+
+export function TelegramOnboarding({ onUsePassword }: Props) {
   const { initData } = useTelegram();
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  function goToPasswordLogin() {
-    enableTelegramPasswordLogin();
-    router.push("/login");
-    router.refresh();
-  }
 
   async function handleNewAccount() {
     if (!initData) return;
@@ -45,7 +42,7 @@ export function TelegramOnboarding() {
         <div className="mt-6 flex flex-col gap-3">
           <button
             type="button"
-            onClick={goToPasswordLogin}
+            onClick={onUsePassword}
             className="rounded-lg bg-emerald-600 py-2.5 text-sm font-medium hover:bg-emerald-500"
           >
             У меня уже есть аккаунт
