@@ -4,10 +4,13 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
 import { signInAction, type AuthState } from "@/app/auth/actions";
+import { useTelegram } from "@/components/TelegramProvider";
 
 function LoginForm() {
+  const { isTelegram } = useTelegram();
   const searchParams = useSearchParams();
   const resetDone = searchParams.get("reset") === "1";
+  const tgError = searchParams.get("tg_error");
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     signInAction,
     null,
@@ -17,9 +20,20 @@ function LoginForm() {
     <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
       <h1 className="text-2xl font-bold">Вход</h1>
       <p className="mt-1 text-sm text-zinc-500">Логин и пароль</p>
+      {isTelegram && (
+        <p className="mt-3 rounded-lg bg-sky-500/10 px-3 py-2 text-sm text-sky-300">
+          После входа открой Настройки → Привязать Telegram, чтобы не создавать
+          второй аккаунт.
+        </p>
+      )}
       {resetDone && (
         <p className="mt-4 rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-400">
           Пароль обновлён. Войди с новым паролем.
+        </p>
+      )}
+      {tgError && (
+        <p className="mt-4 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-400">
+          {decodeURIComponent(tgError)}
         </p>
       )}
       <form action={formAction} className="mt-6 space-y-4">

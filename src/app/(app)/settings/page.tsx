@@ -18,6 +18,8 @@ export default async function SettingsPage() {
         username={profile.username}
         email={profile.email}
         emailVerified={!!profile.email_verified_at}
+        telegramId={profile.telegram_id}
+        telegramUsername={profile.telegram_username}
       />
     </div>
   );

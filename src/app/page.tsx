@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Globe, Map, Users, Heart, Trophy } from "lucide-react";
 import { LeaderboardIntro } from "@/components/LeaderboardIntro";
 import { LeaderboardList } from "@/components/LeaderboardList";
+import { TelegramHomeRedirect } from "@/components/TelegramHomeRedirect";
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
@@ -14,6 +15,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-full bg-[#07090d] text-zinc-100">
+      <TelegramHomeRedirect />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6 sm:px-6">
         <span className="flex items-center gap-2 text-xl font-bold">
           <Globe className="h-6 w-6 text-emerald-400" />

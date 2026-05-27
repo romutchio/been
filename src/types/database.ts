@@ -6,6 +6,9 @@ export type Profile = {
   display_name: string | null;
   email: string | null;
   email_verified_at: string | null;
+  telegram_id: number | null;
+  telegram_username: string | null;
+  telegram_linked_at: string | null;
   created_at: string;
 };
 

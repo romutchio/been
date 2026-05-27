@@ -6,15 +6,24 @@ import {
   updateEmailAction,
   type SettingsState,
 } from "@/app/settings/actions";
+import { TelegramLinkSection } from "@/components/TelegramLinkSection";
 import { CheckCircle2, Mail } from "lucide-react";
 
 type Props = {
   username: string;
   email: string | null;
   emailVerified: boolean;
+  telegramId: number | null;
+  telegramUsername: string | null;
 };
 
-export function SettingsForm({ username, email, emailVerified }: Props) {
+export function SettingsForm({
+  username,
+  email,
+  emailVerified,
+  telegramId,
+  telegramUsername,
+}: Props) {
   const [emailState, emailAction, emailPending] = useActionState<
     SettingsState,
     FormData
@@ -94,6 +103,11 @@ export function SettingsForm({ username, email, emailVerified }: Props) {
           </form>
         )}
       </section>
+
+      <TelegramLinkSection
+        telegramId={telegramId}
+        telegramUsername={telegramUsername}
+      />
 
       {message && <p className="text-sm text-emerald-400">{message}</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}

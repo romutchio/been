@@ -7,6 +7,7 @@ import { normalizeEmail, validateEmail } from "@/lib/auth/email";
 import { storeAuthToken } from "@/lib/auth/tokens";
 import { getAppUrl } from "@/lib/email/config";
 import { sendVerifyEmail } from "@/lib/email/send";
+import { buildTelegramLinkUrl } from "@/lib/telegram-bot";
 
 export type SettingsState = {
   error?: string;
@@ -14,6 +15,7 @@ export type SettingsState = {
 } | null;
 
 const VERIFY_TTL = 24 * 60 * 60 * 1000;
+const LINK_TTL = 15 * 60 * 1000;
 
 async function requireUserId() {
   const userId = await getSessionUserId();
@@ -118,4 +120,32 @@ export async function resendVerificationAction(): Promise<SettingsState> {
   }
 
   return { success: "Письмо отправлено повторно" };
+}
+
+export async function createTelegramLinkAction(): Promise<{
+  link?: string;
+  error?: string;
+}> {
+  const userId = await requireUserId();
+  const supabase = createClient();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("telegram_id")
+    .eq("id", userId)
+    .single();
+
+  if (!profile) return { error: "Профиль не найден" };
+  if (profile.telegram_id) {
+    return { error: "Telegram уже привязан" };
+  }
+
+  try {
+    const raw = await storeAuthToken(userId, "telegram_link", LINK_TTL);
+    const link = buildTelegramLinkUrl(`link_${raw}`);
+    return { link };
+  } catch (e) {
+    console.error("telegram link token failed", e);
+    return { error: "Не удалось создать ссылку" };
+  }
 }

@@ -1,7 +1,10 @@
 import { createHash, randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 
-export type AuthTokenType = "password_reset" | "email_verify";
+export type AuthTokenType =
+  | "password_reset"
+  | "email_verify"
+  | "telegram_link";
 
 export function createRawToken(): string {
   return randomBytes(32).toString("base64url");

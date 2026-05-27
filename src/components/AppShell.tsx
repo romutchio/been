@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { signOutAction } from "@/app/auth/actions";
+import { useTelegram } from "@/components/TelegramProvider";
 import { loadWorldMapGeo } from "@/lib/world-topology";
 
 const nav = [
@@ -35,6 +36,7 @@ type Props = {
 export function AppShell({ username, children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isTelegram } = useTelegram();
 
   useEffect(() => {
     for (const { href } of nav) {
@@ -45,7 +47,11 @@ export function AppShell({ username, children }: Props) {
 
   return (
     <div className="flex min-h-full flex-col bg-[#07090d] text-zinc-100">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#07090d]/90 backdrop-blur">
+      <header
+        className={`sticky top-0 z-20 border-b border-white/10 bg-[#07090d]/90 backdrop-blur ${
+          isTelegram ? "pt-[env(safe-area-inset-top)]" : ""
+        }`}
+      >
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/map" className="flex items-center gap-2 font-semibold" prefetch>
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/20 text-emerald-400">
