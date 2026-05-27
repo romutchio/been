@@ -19,7 +19,9 @@ export default async function SignupLayout({
         </div>
       }
     >
-      <TelegramAuthGate hasSession={false}>{children}</TelegramAuthGate>
+      <TelegramAuthGate hasSession={false} telegramEntry>
+        {children}
+      </TelegramAuthGate>
     </Suspense>
   );
 }

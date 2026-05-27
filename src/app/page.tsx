@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { Globe, Map, Users, Heart, Trophy } from "lucide-react";
 import { LeaderboardIntro } from "@/components/LeaderboardIntro";
 import { LeaderboardList } from "@/components/LeaderboardList";
-import { TelegramHomeRedirect } from "@/components/TelegramHomeRedirect";
+import { HomeAuthLinks } from "@/components/HomeAuthLinks";
+import { HomeMainCta } from "@/components/HomeMainCta";
 
 export default async function HomePage() {
   const userId = await getSessionUserId();
@@ -15,26 +16,12 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-full bg-[#07090d] text-zinc-100">
-      <TelegramHomeRedirect />
       <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-6 sm:px-6">
         <span className="flex items-center gap-2 text-xl font-bold">
           <Globe className="h-6 w-6 text-emerald-400" />
           mutchio
         </span>
-        <div className="flex gap-2 sm:gap-3">
-          <Link
-            href="/login"
-            className="rounded-lg px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 sm:px-4"
-          >
-            Войти
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium hover:bg-emerald-500 sm:px-4"
-          >
-            Начать
-          </Link>
-        </div>
+        <HomeAuthLinks />
       </header>
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-8 text-center sm:px-6 sm:pt-12">
@@ -47,12 +34,7 @@ export default async function HomePage() {
           Схематичная карта мира, таймлайн поездок, wishlist и карты друзей —
           всё в одном месте.
         </p>
-        <Link
-          href="/signup"
-          className="mt-10 inline-block rounded-xl bg-emerald-600 px-8 py-3 font-medium hover:bg-emerald-500"
-        >
-          Создать аккаунт
-        </Link>
+        <HomeMainCta />
 
         <div className="mt-16 grid gap-6 text-left sm:mt-20 sm:grid-cols-3">
           <Feature

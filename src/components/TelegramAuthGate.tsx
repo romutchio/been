@@ -14,18 +14,27 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Props = {
   hasSession: boolean;
   children: React.ReactNode;
+  /**
+   * Страница входа/регистрации: в TMA показываем выбор (есть аккаунт / новый),
+   * без авто-открытия формы логина. Сначала проверяем, привязан ли уже Telegram.
+   */
+  telegramEntry?: boolean;
 };
 
-export function TelegramAuthGate({ hasSession, children }: Props) {
+export function TelegramAuthGate({
+  hasSession,
+  children,
+  telegramEntry = false,
+}: Props) {
   const { isTelegram, isReady, initData } = useTelegram();
   const router = useRouter();
   const searchParams = useSearchParams();
   const passwordFromUrl = searchParams.get("password") === "1";
 
   const [error, setError] = useState<string | null>(null);
-  const [needsChoice, setNeedsChoice] = useState(false);
   const [busy, setBusy] = useState(false);
   const [passwordMode, setPasswordMode] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const tried = useRef(false);
 
   const skipTelegramAuth =
@@ -37,7 +46,7 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
     enableTelegramPasswordLogin();
     tried.current = true;
     setPasswordMode(true);
-    setNeedsChoice(false);
+    setShowOnboarding(false);
     setBusy(false);
     setError(null);
     router.replace("/login?password=1");
@@ -52,6 +61,7 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
 
   useEffect(() => {
     if (
+      !telegramEntry ||
       skipTelegramAuth ||
       !isReady ||
       !isTelegram ||
@@ -65,59 +75,67 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
     setBusy(true);
 
     void signInWithTelegramAction(initData).then((result) => {
-      if (result?.needsChoice) {
-        setNeedsChoice(true);
-        setBusy(false);
-        return;
-      }
-      if (result?.error) {
-        setError(result.error);
-        setBusy(false);
-        return;
-      }
+      setBusy(false);
       if (result?.ok) {
         router.replace("/map");
         router.refresh();
         return;
       }
-      setBusy(false);
+      if (result?.needsChoice) {
+        setShowOnboarding(true);
+        return;
+      }
+      if (result?.error) {
+        setError(result.error);
+        setShowOnboarding(true);
+      }
     });
-  }, [skipTelegramAuth, isReady, isTelegram, hasSession, initData, router]);
+  }, [
+    telegramEntry,
+    skipTelegramAuth,
+    isReady,
+    isTelegram,
+    hasSession,
+    initData,
+    router,
+  ]);
 
   if (isTelegram && !hasSession && (passwordMode || passwordFromUrl)) {
     return children;
   }
 
-  if (isTelegram && !hasSession && needsChoice) {
-    return <TelegramOnboarding onUsePassword={openPasswordLogin} />;
-  }
-
-  if (isTelegram && !hasSession && (busy || !tried.current)) {
-    return (
-      <div className="flex min-h-full items-center justify-center bg-[#07090d] px-4">
-        <div className="w-full max-w-sm">
-          <AuthBrand />
-          <p className="text-center text-sm text-zinc-400">
-            {error ?? "Вход через Telegram…"}
-          </p>
+  if (telegramEntry && isTelegram && !hasSession && !skipTelegramAuth) {
+    if (busy) {
+      return (
+        <div className="flex min-h-full items-center justify-center bg-[#07090d] px-4">
+          <div className="w-full max-w-sm">
+            <AuthBrand />
+            <p className="text-center text-sm text-zinc-400">
+              Проверка аккаунта…
+            </p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
+
+    if (showOnboarding) {
+      return <TelegramOnboarding onUsePassword={openPasswordLogin} />;
+    }
   }
 
-  if (error && isTelegram && !hasSession) {
+  if (error && isTelegram && !hasSession && !telegramEntry) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-3 bg-[#07090d] px-4">
         <div className="w-full max-w-sm">
           <AuthBrand />
-        <p className="text-center text-sm text-red-400">{error}</p>
-        <button
-          type="button"
-          onClick={openPasswordLogin}
-          className="text-sm text-emerald-400 hover:underline"
-        >
-          Войти по логину и паролю
-        </button>
+          <p className="text-center text-sm text-red-400">{error}</p>
+          <button
+            type="button"
+            onClick={openPasswordLogin}
+            className="mt-3 text-sm text-emerald-400 hover:underline"
+          >
+            Войти по логину и паролю
+          </button>
         </div>
       </div>
     );
