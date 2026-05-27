@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
+import { clearTelegramPasswordLogin } from "@/lib/telegram-client";
 import {
   Globe,
   Heart,
@@ -39,6 +40,7 @@ export function AppShell({ username, children }: Props) {
   const { isTelegram } = useTelegram();
 
   useEffect(() => {
+    clearTelegramPasswordLogin();
     for (const { href } of nav) {
       router.prefetch(href);
     }

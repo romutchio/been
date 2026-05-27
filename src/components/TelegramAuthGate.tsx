@@ -3,6 +3,10 @@
 import { signInWithTelegramAction } from "@/app/auth/telegram/actions";
 import { TelegramOnboarding } from "@/components/TelegramOnboarding";
 import { useTelegram } from "@/components/TelegramProvider";
+import {
+  enableTelegramPasswordLogin,
+  isTelegramPasswordLogin,
+} from "@/lib/telegram-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,10 +21,24 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [needsChoice, setNeedsChoice] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [passwordMode, setPasswordMode] = useState(false);
   const tried = useRef(false);
 
   useEffect(() => {
-    if (!isReady || !isTelegram || hasSession || tried.current || !initData) {
+    if (isTelegramPasswordLogin()) {
+      setPasswordMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      passwordMode ||
+      !isReady ||
+      !isTelegram ||
+      hasSession ||
+      tried.current ||
+      !initData
+    ) {
       return;
     }
     tried.current = true;
@@ -44,7 +62,11 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
       }
       setBusy(false);
     });
-  }, [isReady, isTelegram, hasSession, initData, router]);
+  }, [passwordMode, isReady, isTelegram, hasSession, initData, router]);
+
+  if (isTelegram && !hasSession && passwordMode) {
+    return children;
+  }
 
   if (isTelegram && !hasSession && needsChoice) {
     return <TelegramOnboarding />;
@@ -64,9 +86,19 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-3 bg-[#07090d] px-4">
         <p className="text-center text-sm text-red-400">{error}</p>
-        <a href="/login" className="text-sm text-emerald-400 hover:underline">
+        <button
+          type="button"
+          onClick={() => {
+            enableTelegramPasswordLogin();
+            setPasswordMode(true);
+            setNeedsChoice(false);
+            setError(null);
+            tried.current = true;
+          }}
+          className="text-sm text-emerald-400 hover:underline"
+        >
           Войти по логину и паролю
-        </a>
+        </button>
       </div>
     );
   }
