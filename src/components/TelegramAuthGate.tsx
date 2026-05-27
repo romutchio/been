@@ -1,6 +1,7 @@
 "use client";
 
 import { signInWithTelegramAction } from "@/app/auth/telegram/actions";
+import { AuthBrand } from "@/components/AuthBrand";
 import { TelegramOnboarding } from "@/components/TelegramOnboarding";
 import { useTelegram } from "@/components/TelegramProvider";
 import {
@@ -94,9 +95,12 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
   if (isTelegram && !hasSession && (busy || !tried.current)) {
     return (
       <div className="flex min-h-full items-center justify-center bg-[#07090d] px-4">
-        <p className="text-sm text-zinc-400">
-          {error ?? "Вход через Telegram…"}
-        </p>
+        <div className="w-full max-w-sm">
+          <AuthBrand />
+          <p className="text-center text-sm text-zinc-400">
+            {error ?? "Вход через Telegram…"}
+          </p>
+        </div>
       </div>
     );
   }
@@ -104,6 +108,8 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
   if (error && isTelegram && !hasSession) {
     return (
       <div className="flex min-h-full flex-col items-center justify-center gap-3 bg-[#07090d] px-4">
+        <div className="w-full max-w-sm">
+          <AuthBrand />
         <p className="text-center text-sm text-red-400">{error}</p>
         <button
           type="button"
@@ -112,6 +118,7 @@ export function TelegramAuthGate({ hasSession, children }: Props) {
         >
           Войти по логину и паролю
         </button>
+        </div>
       </div>
     );
   }

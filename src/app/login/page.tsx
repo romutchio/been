@@ -1,5 +1,6 @@
 "use client";
 
+import { AuthBrand } from "@/components/AuthBrand";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useActionState } from "react";
@@ -88,12 +89,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-full items-center justify-center bg-[#07090d] px-4">
       <div className="w-full max-w-sm">
-        <Link
-          href="/"
-          className="mb-8 block text-center text-xl font-bold text-emerald-400"
-        >
-          mutchio
-        </Link>
+        <AuthBrand />
         <Suspense fallback={<p className="text-center text-zinc-500">Загрузка…</p>}>
           <LoginForm />
         </Suspense>

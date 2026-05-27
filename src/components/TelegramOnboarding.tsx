@@ -2,6 +2,7 @@
 
 import { registerWithTelegramAction } from "@/app/auth/telegram/actions";
 import { useTelegram } from "@/components/TelegramProvider";
+import { AuthBrand } from "@/components/AuthBrand";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -31,8 +32,10 @@ export function TelegramOnboarding({ onUsePassword }: Props) {
 
   return (
     <div className="flex min-h-full items-center justify-center bg-[#07090d] px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-8">
-        <h1 className="text-xl font-bold">Вход в mutchio</h1>
+      <div className="w-full max-w-sm">
+        <AuthBrand />
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
+        <h1 className="text-xl font-bold">Вход</h1>
         <p className="mt-2 text-sm leading-relaxed text-zinc-500">
           Если у тебя уже есть аккаунт на сайте (логин и пароль), сначала войди
           им — потом привяжешь Telegram в настройках. Иначе создастся второй
@@ -58,6 +61,7 @@ export function TelegramOnboarding({ onUsePassword }: Props) {
         </div>
 
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+        </div>
       </div>
     </div>
   );
